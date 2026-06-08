@@ -1,0 +1,18 @@
+# Smithery configuration for the Poppify MCP server.
+#
+# Poppify is a remote HTTP MCP server hosted at https://poppify.ai/mcp.
+# No local install, no Docker, no stdio bridge needed — Smithery clients
+# can connect directly via Streamable HTTP transport.
+#
+# Wallet setup happens inside the MCP itself: the agent calls `register()`
+# on first contact to mint an apiKey (write to ~/.poppify/key per the
+# server instructions). 50 free seeds are granted on signup. No config
+# is required in Smithery — credential management is handled per-session
+# by the MCP server's own tool surface.
+#
+# Docs: https://poppify.ai/mcp
+# Source: https://github.com/Poppify/poppify-claude-plugin
+
+remotes:
+  - type: streamable-http
+    url: "https://poppify.ai/mcp"
