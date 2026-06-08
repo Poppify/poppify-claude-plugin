@@ -61,7 +61,10 @@ apply_session_patch({
   textAnimation: "phrase_reveal",          // typewriter | bold_captions | phrase_reveal
   videoEffect: "ken_burns",                // session-wide motion
   audioMood: "uplifting",
-  duration: "30s",                         // 15s | 30s | 60s
+  // NOTE: no `duration` knob. Reel duration is driven by per-slide content
+  // (voiceover length > text length > explicit slide.duration > 4s default).
+  // To change runtime: write more/fewer words, add/remove slides, or set
+  // slide.duration on blank text-baked cards.
   // Per-slide motion overrides (takes precedence over session-wide)
   slideEffects: [
     { slideIndex: 3, videoEffect: "focus_pull" }  // end card → minimal motion
@@ -119,7 +122,9 @@ When `status === "complete"`, you get a `videoUrl` (signed GCS URL, expires in ~
 
 - **Don't burn seeds on text-heavy slides.** Gemini Imagen garbles literal text (terminal frames, install commands, stat callouts). For those: HTML/CSS screencap locally → `upload_asset` → `update_visual({source:"user_url",url:accessUrl})`. ZERO seeds.
 - **Composer draws caption text BY DEFAULT** from `slides[i].voiceoverShort`. Empty string = skipped.
-- **Text-length drives slide duration.** To make a slide last longer, write MORE text on it via `update_slides set_text`. There's no `duration` knob per slide.
+- **Slide duration is a hierarchy, no global control.** Four rules, top wins: (1) voiceover audio length when attached (binding); (2) text-length formula `(words/2.6)*1.2` when text exists; (3) explicit `slide.duration` for blank text-baked cards; (4) 4s default for blank slides. To make a slide last longer: write MORE text. `customize({duration})` is rejected — no session-level duration control.
+- **Voiceover auto-detaches when text changes.** The text you write IS the voiceover script. `update_slides({action:"set_text"})` on a slide with attached voiceover detaches it (old audio of wrong words). Call `generate_voiceover` ONLY after text is finalized — otherwise you waste 10 seeds per text edit.
+- **Text cards (terminal screencaps, end cards)**: pass an image with text already baked in, then `update_slides({action:"set_text", slideIndex, newText:""})`. Empty string suppresses composer text overlay. Slide duration falls back to 4s.
 - **Sceneboard recipes auto-lock motion across all panels** — per-slide variation is ignored when visualType is sceneboard.
 - **Library audio resolves URLs at attach time** — if `set_audio({source:"library"})` errors with "asset not found", pick a different `assetId` from `get_music_library`.
 
