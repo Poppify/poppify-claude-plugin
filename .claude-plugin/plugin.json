@@ -1,8 +1,7 @@
 {
   "name": "poppify",
   "displayName": "Poppify",
-  "version": "0.1.0",
-  "description": "Generate cinematic vertical reels from photos or topics — directly from Claude Code. Bundles the Poppify MCP server (HTTP) + skills that teach Claude how to use it well.",
+  "description": "Generate cinematic vertical reels from photos or topics — directly from Claude Code. Bundles the Poppify MCP server (HTTP) + skills + slash commands that teach Claude how to use it well.",
   "author": {
     "name": "Poppify",
     "email": "admin@poppify.ai"

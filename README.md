@@ -9,6 +9,9 @@
 | Component | Purpose |
 |---|---|
 | **MCP server** (`https://poppify.ai/mcp`, HTTP) | All Poppify tools: `register`, `start_session_from_photos`, `apply_session_patch`, `customize`, `set_audio`, `generate_image`, `confirm`, `get_result`, etc. |
+| **`/poppify:make-reel`** slash command | Guided session flow — photo-led or topic-led entry, free customize loop, paid confirm. |
+| **`/poppify:troubleshoot`** slash command | Symptom triage when a render came out wrong. |
+| **`/poppify:verify-render`** slash command | Download + ffprobe + frame-extract verdict on a finished MP4. |
 | **`poppify-build-reel`** skill | The canonical photo-led / topic-led flow — when to use which tool, where the free vs paid boundaries are. |
 | **`poppify-render-debug`** skill | Download the finished MP4, run ffprobe, extract frames, surface a verdict. |
 | **`poppify-troubleshoot`** skill | Decision tree: symptom → root cause → action for missing audio, wrong colors, dropped captions, stuck renders. |
