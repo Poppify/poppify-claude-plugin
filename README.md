@@ -1,8 +1,8 @@
-# Poppify — Claude Code Plugin for Short-Form Vertical Video
+# Poppify — Photo to TikTok & Instagram Reels (MCP Server + Claude Code Plugin)
 
-> **The Claude Code plugin for photo-led short-form vertical reels** — Instagram, TikTok, YouTube Shorts, Facebook. Upload 1–10 photos, get a captioned 15/30/60s reel with motion, library-matched music, and optional voiceover. **$0.06 base render. 50 free seeds on signup. No subscription.**
+> **MCP server and Claude Code plugin for photo to TikTok, Instagram Reels, YouTube Shorts, and Facebook video.** Upload 1–10 photos, get a captioned 15/30/60s reel with motion, library-matched music, and optional voiceover. **$0.06 base render. 50 free seeds on signup. No subscription.**
 
-[Poppify](https://poppify.ai) is a Claude Code plugin that *composes* reels via a photo-led creative pipeline (FFmpeg motion + library-first asset matching + recipe-driven narrative + on-screen text), not a text-to-video generator. That's why the base render is 1 seed (~$0.06) instead of dollars-per-second like generative video services. When you need standalone AI assets, `generate_image` / `generate_music` / `generate_voiceover` are callable on their own (10 seeds each).
+[Poppify](https://poppify.ai) is a Claude Code plugin (and standalone MCP server) that *composes* reels via a photo-led creative pipeline (FFmpeg motion + library-first asset matching + recipe-driven narrative + on-screen text), not a text-to-video generator. That's why the base render is 1 seed (~$0.06) instead of dollars-per-second like generative video services (Runway, Sora, Kling, Vidu, Veo). When you need standalone AI assets, `generate_image` / `generate_music` / `generate_voiceover` are callable on their own (10 seeds each).
 
 **Where it fits in a Claude Code marketing stack:** Poppify is the creative slot. Pairs with [Postiz](https://github.com/gitroomhq/postiz-agent) for cross-platform scheduling and [Windsor.ai](https://github.com/windsor-ai/claude-windsor-ai-plugin) for attribution. Drop-in replacement for [Runway](https://github.com/runwayml/skills) when you have photos and want library-matched audio; use [HyperFrames](https://github.com/heygen-com/hyperframes) when you want to code video in HTML.
 
