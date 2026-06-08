@@ -42,6 +42,17 @@ That's it. After install:
 
 Seeds are sold at $5.99 for 100 seeds (standard pack) or $0.50 for 5 seeds (mini trial pack). 50 seeds are granted free on signup.
 
+## Also useful standalone
+
+The reel pipeline is the headline, but every generation primitive is callable on its own — handy for ad-hoc creative tasks, not just full reels:
+
+- **`generate_image`** — Gemini Imagen, 10 seeds. Workshop the prompt for free first via `suggest_image_prompt`, then generate. Returns a URL.
+- **`generate_music`** — ElevenLabs Music, 10 seeds. Workshop via `suggest_music_prompt` (free), then generate. Returns a URL.
+- **`generate_voiceover`** — ElevenLabs Voice, 10 seeds per batch. Browse the curated voice catalog (free) via `list_voices`, then generate from a script.
+- **`search_visual_library`** / **`get_music_library`** — search the existing royalty-free library before generating. FREE. Matches at score ≥ 40 generally beat fresh AI generation.
+
+Generated assets persist to your asset library, so they're reusable across future reels and discoverable on later searches.
+
 ## Manual install (without the plugin)
 
 If you only want the MCP and don't want the skills:
