@@ -12,7 +12,8 @@
       "name": "poppify",
       "source": "./",
       "category": "creative",
-      "description": "MCP server (HTTP) + skills + slash commands for generating cinematic vertical reels from photos or topics. After install: register() to mint a wallet (50-seed signup bonus), then start_session_from_photos or start_session for topic-led."
+      "description": "Photo-led short-form vertical reels for Instagram / TikTok / YouTube Shorts / Facebook Reels. Upload 1–10 photos, get a captioned 15/30/60s reel with motion, music, and optional voiceover — $0.06 base render, 50 free seeds on signup, no subscription. Recipe-driven composition (14 narrative frameworks), 4-scope library search before any AI generation. Standalone primitives (generate_image, generate_music, generate_voiceover) callable on their own. Not for: text→video generation, 4K horizontal output, or sub-4s clips — use a generative video MCP for those.",
+      "tags": ["reel", "video", "instagram", "tiktok", "youtube-shorts", "facebook-reels", "vertical-video", "social-media", "photo-to-video", "creative", "ai-image", "ai-music", "ai-voiceover"]
     }
   ]
 }

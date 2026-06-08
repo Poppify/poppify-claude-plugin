@@ -1,7 +1,7 @@
 {
   "name": "poppify",
   "displayName": "Poppify",
-  "description": "Generate cinematic vertical reels from photos or topics — directly from Claude Code. Bundles the Poppify MCP server (HTTP) + skills + slash commands that teach Claude how to use it well.",
+  "description": "Photo-led short-form vertical reels for Instagram / TikTok / YouTube Shorts / Facebook Reels. Upload 1–10 photos, get a captioned 15/30/60s reel with motion, music, and optional voiceover — $0.06 base render, 50 free seeds on signup, no subscription. Bundles HTTP MCP + 4 skills + 3 slash commands. Includes standalone primitives (generate_image, generate_music, generate_voiceover) when the library doesn't have what you need. Not for: text→video generation (use a generative video MCP), 4K horizontal output, or sub-4s clips.",
   "author": {
     "name": "Poppify",
     "email": "admin@poppify.ai"

@@ -1,8 +1,10 @@
 # Poppify — Claude Code Plugin
 
-> Generate cinematic vertical reels directly from Claude Code. One install adds the Poppify MCP server **and** four skills that teach Claude how to use it well.
+> **Photo-led short-form vertical reels for Instagram / TikTok / YouTube Shorts / Facebook Reels.** Upload 1–10 photos, get a captioned 15/30/60s reel with motion, music, and optional voiceover. **$0.06 base render. 50 free seeds on signup. No subscription.**
 
-[Poppify](https://poppify.ai) is an AI creative-video pipeline: photos or topics in, finished 720x1280 reels (with motion, music, captions, voiceover) out. This plugin packages the public Poppify MCP (HTTP) together with the operational knowledge Claude needs to drive it reliably.
+[Poppify](https://poppify.ai) is a photo-led creative pipeline that *composes* reels (FFmpeg motion + library-matched assets + recipe-driven narrative + on-screen text), not a text-to-video generator. That's why the base render is 1 seed (~$0.06) instead of dollars-per-second like generative video services. When you need standalone AI assets, `generate_image` / `generate_music` / `generate_voiceover` are callable on their own (10 seeds each).
+
+**Not for:** text→video generation (Sora, Veo, Kling — use a generative video MCP), 4K horizontal cinema, or sub-4-second clips.
 
 ## What's inside
 

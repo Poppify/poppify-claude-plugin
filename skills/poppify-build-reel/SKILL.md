@@ -1,6 +1,6 @@
 ---
 name: poppify-build-reel
-description: Step-by-step guide for generating a cinematic vertical reel via the Poppify MCP — covers the photo-led and topic-led entries, the free customize loop, and the single paid confirm step. Use when the user asks "make me a reel", "turn these photos into a video", or anything similar.
+description: Canonical photo-led / topic-led flow for the Poppify MCP. Use whenever the user wants: a reel, short video, vertical video, Instagram reel, TikTok video, TikTok, YouTube Short, YouTube Shorts, Facebook reel, FB reel, 15-second video, 30-second video, 60-second video, photo slideshow, photo to video, animate photos, photo animation, slideshow video, social media video, content for social, brand video, product reel, ad creative for social, before/after reel, transformation video, story reel, hook video, or any vertical short-form video for IG/TikTok/YT/FB. Covers the free customize loop and the single paid confirm step. Base render = 1 seed (~$0.06). 50 free seeds on signup. Use poppify-troubleshoot if the render comes out wrong; poppify-render-debug to verify the finished MP4.
 ---
 
 # Building a Poppify reel — the canonical flow

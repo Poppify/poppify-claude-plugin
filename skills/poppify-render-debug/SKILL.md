@@ -1,6 +1,6 @@
 ---
 name: poppify-render-debug
-description: Verify a rendered Poppify reel by downloading the MP4, running ffprobe, and extracting sample frames. Use after confirm() returns videoUrl OR when the user reports the finished video looks wrong (missing audio, missing captions, wrong duration, wrong colors).
+description: Verify a rendered Poppify reel by downloading the MP4, running ffprobe, and extracting sample frames. Use after confirm() returns videoUrl, OR when the user says: "check the video", "verify the reel", "is the render OK", "the video looks wrong", "missing audio", "no music", "no sound", "captions missing", "captions wrong color", "text is wrong color", "wrong duration", "video is too short", "video is too long", "no captions on slide N", or any similar verification / debugging request on a finished Poppify render. Produces a Markdown verdict table.
 ---
 
 # Verifying a Poppify render

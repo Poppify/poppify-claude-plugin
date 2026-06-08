@@ -1,6 +1,6 @@
 ---
 name: poppify-troubleshoot
-description: Decision tree for "the Poppify reel came out wrong". Map a symptom (missing audio, wrong colors, captions dropped, render failed, seeds charged but no video) to the most likely root cause and a single concrete next action. Use when the user reports any deviation from what they asked for.
+description: Diagnose a Poppify reel that came out wrong. Use when the user says: "the reel came out wrong", "render failed", "no audio in the video", "no music", "captions are missing", "wrong color text", "text is green/blue/etc instead of white", "video URL doesn't open", "video URL expired", "seeds were charged but no video", "render is stuck", "render still loading after 5 minutes", "duration is wrong", "video too short / too long", "image has text baked in", "library search returned nothing", or any deviation from what they asked for. Walks the symptom → root cause → action decision tree.
 ---
 
 # Poppify render troubleshooting

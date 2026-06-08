@@ -1,6 +1,6 @@
 ---
 name: poppify-schema-introspect
-description: Inspect the deployed Poppify MCP tool schemas to verify what parameters are actually accepted, vs what older docs may claim. Use when a parameter you passed appears to have been silently dropped, OR before recommending a parameter you're not 100% sure is in the current build.
+description: Inspect the deployed Poppify MCP tool schemas to verify what parameters are actually accepted. Use when: a parameter you passed seems to have been silently dropped, a customize/apply_session_patch field didn't take effect, the render came out using defaults instead of your overrides, OR before recommending a parameter you're not 100% sure is in the current deployed build. Diffs schema-vs-docs and helps file precise feedback when drift is found.
 ---
 
 # Inspecting the deployed Poppify MCP schemas
