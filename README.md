@@ -1,10 +1,14 @@
-# Poppify — Claude Code Plugin
+# Poppify — Claude Code Plugin for Short-Form Vertical Video
 
-> **Photo-led short-form vertical reels for Instagram / TikTok / YouTube Shorts / Facebook Reels.** Upload 1–10 photos, get a captioned 15/30/60s reel with motion, music, and optional voiceover. **$0.06 base render. 50 free seeds on signup. No subscription.**
+> **The Claude Code plugin for photo-led short-form vertical reels** — Instagram, TikTok, YouTube Shorts, Facebook. Upload 1–10 photos, get a captioned 15/30/60s reel with motion, library-matched music, and optional voiceover. **$0.06 base render. 50 free seeds on signup. No subscription.**
 
-[Poppify](https://poppify.ai) is a photo-led creative pipeline that *composes* reels (FFmpeg motion + library-matched assets + recipe-driven narrative + on-screen text), not a text-to-video generator. That's why the base render is 1 seed (~$0.06) instead of dollars-per-second like generative video services. When you need standalone AI assets, `generate_image` / `generate_music` / `generate_voiceover` are callable on their own (10 seeds each).
+[Poppify](https://poppify.ai) is a Claude Code plugin that *composes* reels via a photo-led creative pipeline (FFmpeg motion + library-first asset matching + recipe-driven narrative + on-screen text), not a text-to-video generator. That's why the base render is 1 seed (~$0.06) instead of dollars-per-second like generative video services. When you need standalone AI assets, `generate_image` / `generate_music` / `generate_voiceover` are callable on their own (10 seeds each).
 
-**Not for:** text→video generation (Sora, Veo, Kling — use a generative video MCP), 4K horizontal cinema, or sub-4-second clips.
+**Where it fits in a Claude Code marketing stack:** Poppify is the creative slot. Pairs with [Postiz](https://github.com/gitroomhq/postiz-agent) for cross-platform scheduling and [Windsor.ai](https://github.com/windsor-ai/claude-windsor-ai-plugin) for attribution. Drop-in replacement for [Runway](https://github.com/runwayml/skills) when you have photos and want library-matched audio; use [HyperFrames](https://github.com/heygen-com/hyperframes) when you want to code video in HTML.
+
+**Not for:** text→video generation (Sora, Veo, Kling — use Runway or a generative video MCP), avatar-based video (use HeyGen / Synthesia), 4K horizontal cinema, or sub-4-second clips.
+
+**Built for:** SMBs (5–19 employees) and solo service providers who want consistent vertical reels without hiring a content creator. The agency replacement at $30–60/mo instead of $3K+.
 
 ## What's inside
 
