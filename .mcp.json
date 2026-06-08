@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "poppify": {
+      "type": "http",
+      "url": "https://poppify.ai/mcp"
+    }
+  }
+}

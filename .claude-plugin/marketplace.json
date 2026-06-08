@@ -1,0 +1,15 @@
+{
+  "name": "poppify",
+  "description": "Poppify creative-video tooling for Claude Code",
+  "owner": {
+    "name": "Poppify",
+    "email": "admin@poppify.ai"
+  },
+  "plugins": [
+    {
+      "name": "poppify",
+      "source": ".",
+      "description": "MCP server (HTTP) + skills for generating cinematic vertical reels from photos or topics. After install: register() to mint a wallet (50-seed signup bonus), then start_session_from_photos or start_session for topic-led."
+    }
+  ]
+}
