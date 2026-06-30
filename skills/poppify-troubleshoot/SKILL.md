@@ -82,14 +82,32 @@ If `session.duration` was set but the reel is shorter: confirm via `get_session_
 **Most likely**: `generate_image` was called for a text-heavy concept and Gemini Imagen garbled the literal text into the image, AND composer drew drawtext on top — so the slide has double text.
 
 **Action**:
-- For text-heavy slides (terminal frames, install commands, stat callouts, end cards): render text-on-bg locally via HTML/CSS screencap + `upload_asset`, then attach via `update_visual({source:"user_url", url:accessUrl})` + `update_slides({action:"set_text", slideIndex, newText:""})` (so composer doesn't add text on top).
+- For text-heavy slides (terminal frames, install commands, stat callouts, end cards): render text-on-bg locally via HTML/CSS screencap + `upload_asset`, then attach via `update_slides({action:"set_image", slideIndex, imageUrl:accessUrl})` + `update_slides({action:"set_text", slideIndex, newText:""})` (so composer doesn't add text on top). (`set_image` is the slide-first attach path; `update_visual` is the legacy pool path and fails when the pool is empty.)
 - For non-text-heavy slides where AI image is fine: just re-generate with a sharper `suggest_image_prompt` first (free).
 
 ### "Library search returned nothing relevant"
 
 **Action**: refine the query. Library scoring weights **Visual Hint Match (tag/keyword)** at 50/100 points — generic queries score low. Use specific keywords from the slide's `voiceoverShort` or concept hook.
 
-If still nothing > score 40: fall through to `generate_image` (10 seeds). Workshop the prompt with `suggest_image_prompt` for free before generating.
+If still nothing > score 40: fall through to `generate_image` (5 seeds). Workshop the prompt with `suggest_image_prompt` for free before generating.
+
+### "Single-image reel has jerky / resetting motion at each cut"
+
+**Most likely**: different `videoEffect` values were set per slide on a same-image run, which disables continuous-curve smoothing. Each slide then gets its own independent camera move, so the motion visibly resets at every cut instead of flowing as one continuous shot.
+
+**Action**: for a reel where one image carries all slides, use ONE session-wide `videoEffect` (e.g. `push_in`) and leave `continuousEffect` on (default `true`) — the renderer then makes a single continuous camera move across the whole reel via a global frame offset. Variety comes from the changing captions, not from per-slide motion. Only assign per-slide effects when slides have *different* images.
+
+### "confirm() says 'needs at least one image attached' but I set images"
+
+**Most likely**: images were placed per-slide via `set_image` but you're on an older deployment whose confirm gate only checked the legacy pool. On current builds, `confirm()` accepts any session where a slide carries its own `imageUrl`.
+
+**Action**: confirm at least one `session.slides[i].imageUrl` is populated (via `get_slide_plan`). If it is and confirm still rejects, the deployment is stale — `update_visual({action:"insert_before", slideIndex:0, source:"user_url", url})` seeds the legacy pool as a fallback, or file `submit_feedback`. Do NOT use `update_visual({action:"replace"})` on a topic-led session — the pool is empty so it errors.
+
+### "Live motion didn't apply / subject isn't moving"
+
+**Most likely**: `generate_live_motion` was never called, or the slide's `motionMode` wasn't set to `live` first. Live motion is a deliberate 2-step upgrade, not a default.
+
+**Action**: `update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction:"<verb>"})` THEN `generate_live_motion({sessionId, slideIndex})` (10 seeds, or free on a `search_live_library` cache hit ≥ 60). Confirm the cinematic baseline was rendered and reviewed first — live motion is offered only after that.
 
 ## When to file feedback
 

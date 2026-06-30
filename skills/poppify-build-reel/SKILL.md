@@ -5,7 +5,9 @@ description: Canonical photo-led / topic-led flow for the Poppify MCP. Use whene
 
 # Building a Poppify reel — the canonical flow
 
-Poppify is FREE for everything except `confirm` (1 seed = $0.006 base render) and `generate_*` tools (10 seeds each for AI image / music / voiceover). You can iterate the configuration **infinitely** before render and not spend anything.
+Poppify is FREE for everything except `confirm` (1 seed base render) and the `generate_*` tools (5 seeds each for AI image / music / voiceover; `generate_live_motion` is 10 seeds per clip). You can iterate the configuration **infinitely** before render and not spend anything.
+
+> **Think in SLIDES, not a photo pool.** Every beat owns its image at `slides[i].imageUrl`. Attach or swap a beat's visual with `update_slides({action:"set_image", slideIndex, imageUrl})`, or set several at once via `apply_session_patch({slides:[{index, imageUrl}]})`. The legacy `update_visual` operates on a `photoUrls` pool and **fails when the pool is empty** (every topic-led session) — prefer `set_image`.
 
 ## Step 1 — Mint a wallet (one-time, free)
 
@@ -40,7 +42,14 @@ Returns: slides[] (each with `voiceoverShort` text), caption, hashtags, callToAc
 start_session({ apiKey, topic, audience, goal, platform })
 ```
 
-Returns 5 concept options. Pick one with `refine_concept`.
+Returns 5 concept options. Pick one with `refine_concept`. **A topic-led session starts with NO images** — every slide's `imageUrl` is empty. You MUST give at least one slide an image (Step 4) before `confirm`, or it refunds with `topic_led_no_images`. The `recipeDistribution` field shows which recipes the 5 concepts span; if they collapsed off-brief (e.g. you wanted a tribute/hype angle but got all confessional), call `start_session` again with an explicit `recipe` parameter (`list_recipes()` for IDs).
+
+### Decide FIRST: one image, or one per beat?
+
+Before generating anything, ask whether **one image can carry the whole reel**. For a single-subject / hero / cinematic reel (recipe `visualType: "hero_image"`), it usually can — the camera motion and the changing captions ARE the variety; the image stays the star. Generating four images for four beats is the wrong default — it costs 4× the seeds AND drifts the subject's identity across slides.
+
+- **One image across all beats** (recommended for single-subject reels): `generate_image` once, then `set_image` the SAME URL on every slide. Keep ONE `videoEffect` + `continuousEffect` on so the camera makes one continuous move (see Gotchas). 5 seeds total for imagery.
+- **One image per beat** (only when beats are genuinely distinct scenes — before/after, multi-step, comparison): generate/search per slide. N × 5 seeds.
 
 ## Step 3 — Refine (FREE, unlimited iteration)
 
@@ -76,9 +85,10 @@ apply_session_patch({
 
 If you'd rather iterate one knob at a time, the per-action tools all work:
 - `update_slides({ action: "set_text", slideIndex, newText })` — literal text per slide
+- `update_slides({ action: "set_image", slideIndex, imageUrl })` — set/swap a beat's image (slide-first; this is the way)
 - `customize(...)` — production knobs
 - `set_audio(...)` — attach music
-- `update_visual(...)` — per-slide image swap or insert
+- `update_visual(...)` — legacy pool replace/insert (works only on photo-led pool sessions; use `set_image` instead)
 
 **Search the library FIRST** before generating:
 - `search_visual_library({ apiKey, query, limit })` for images — score ≥ 40 should beat AI gen
@@ -86,19 +96,21 @@ If you'd rather iterate one knob at a time, the per-action tools all work:
 
 ## Step 4 — Generate AI assets only when needed
 
-These cost 10 seeds each. Always workshop the prompt for free first:
+These cost 5 seeds each. Always workshop the prompt for free first:
 
 ```
 suggest_image_prompt({ apiKey, slideContext })   // FREE prompt refinement
-generate_image({ apiKey, prompt, style })        // 10 seeds, returns image URL
-// Then attach via apply_session_patch.visualEdits or update_visual
+generate_image({ apiKey, prompt, style })        // 5 seeds, returns image URL
+// Then attach via update_slides({action:"set_image", slideIndex, imageUrl})
+//   — or apply_session_patch({slides:[{index, imageUrl}, ...]}) for several beats.
+//   For a single-image reel, set_image the SAME URL on every slide.
 
 suggest_music_prompt({ apiKey, mood, genre })    // FREE prompt refinement
-generate_music({ apiKey, prompt, durationSeconds }) // 10 seeds, returns URL
+generate_music({ apiKey, prompt, durationSeconds }) // 5 seeds, returns URL (max 30s)
 // Then attach via apply_session_patch.audio or set_audio
 
 list_voices({ apiKey })                          // FREE voice catalog
-generate_voiceover({ apiKey, scripts, voiceId }) // 10 seeds per batch
+generate_voiceover({ apiKey, scripts, voiceId }) // 5 seeds per batch
 // Then attach via apply_session_patch.voiceoverSlides or set_voiceover
 ```
 
@@ -118,13 +130,27 @@ get_result({ sessionId, apiKey })
 
 When `status === "complete"`, you get a `videoUrl` (signed GCS URL, expires in ~23h). **Download it immediately** — the URL is short-lived. Don't tell the user "we emailed it" — Poppify does not email rendered reels; the URL is the only delivery surface.
 
+## Step 6 — OPTIONAL: Live Motion (a per-slide upgrade, only AFTER baseline review)
+
+Live Motion animates the **subject inside a still** (blink, breath, micro-gesture, a small action) using Veo 3.1 Lite image-to-video, while the FFmpeg camera motion layers on top. It is an OPTIONAL upgrade, NOT a default — the flow is **render the cinematic baseline → user reviews → optionally upgrade selected slides to live**. Never apply it before the user has seen the cinematic render; you'd risk burning seeds on a reel they might already love.
+
+When the user wants it:
+1. `search_live_library({ apiKey, imageHash?, actionKeywords, durationSeconds, provider:"veo-3.1-lite" })` FIRST — cache hits (score ≥ 60) attach for **zero seeds**.
+2. `suggest_live_action({ sessionId, slideIndex })` → pick a motion verb; `preview_live_prompt` is free.
+3. `update_slides({ action:"set_motion_mode", slideIndex, motionMode:"live", liveAction:"<verb>", liveDurationSeconds:<4|6|8> })`.
+4. `generate_live_motion({ sessionId, slideIndex })` — **10 seeds** per clip (capped 8s), or free on a cache hit. ~30–90s wall-clock.
+5. `confirm` again to re-render with the live slide.
+
+Recommend **at most one** live slide, usually the hook (slide 0) — a living subject in the first frame stops the scroll. Quote the planner's per-slide score to justify the pick.
+
 ## Gotchas worth knowing
 
-- **Don't burn seeds on text-heavy slides.** Gemini Imagen garbles literal text (terminal frames, install commands, stat callouts). For those: HTML/CSS screencap locally → `upload_asset` → `update_visual({source:"user_url",url:accessUrl})`. ZERO seeds.
+- **Don't burn seeds on text-heavy slides.** Gemini Imagen garbles literal text (terminal frames, install commands, stat callouts). For those: HTML/CSS screencap locally → `upload_asset` → `update_slides({action:"set_image", slideIndex, imageUrl:accessUrl})`. ZERO seeds.
+- **Single-image reel → ONE continuous camera move.** When one image carries all slides, keep a SINGLE `videoEffect` and leave `continuousEffect` on (default `true`). The renderer then makes one continuous move across the whole reel via a global frame offset. **Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing** — each slide gets its own independent move and the motion visibly resets at every cut. Only use per-slide `slideEffects` when the slides have *different* images.
 - **Composer draws caption text BY DEFAULT** from `slides[i].voiceoverShort`. Empty string = skipped.
 - **Slide duration is a hierarchy, no global control.** Four rules, top wins: (1) voiceover audio length when attached (binding); (2) text-length formula `(words/2.6)*1.2` when text exists; (3) explicit `slide.duration` for blank text-baked cards; (4) 4s default for blank slides. To make a slide last longer: write MORE text. `customize({duration})` is rejected — no session-level duration control.
-- **Voiceover auto-detaches when text changes.** The text you write IS the voiceover script. `update_slides({action:"set_text"})` on a slide with attached voiceover detaches it (old audio of wrong words). Call `generate_voiceover` ONLY after text is finalized — otherwise you waste 10 seeds per text edit.
-- **Text cards (terminal screencaps, end cards)**: pass an image with text already baked in, then `update_slides({action:"set_text", slideIndex, newText:""})`. Empty string suppresses composer text overlay. Slide duration falls back to 4s.
+- **Voiceover auto-detaches when text changes.** The text you write IS the voiceover script. `update_slides({action:"set_text"})` on a slide with attached voiceover detaches it (old audio of wrong words). Call `generate_voiceover` ONLY after text is finalized — otherwise you waste 5 seeds per text edit.
+- **Text cards (terminal screencaps, end cards)**: `set_image` an image with text already baked in, then `update_slides({action:"set_text", slideIndex, newText:""})`. Empty string suppresses composer text overlay. Slide duration falls back to 4s.
 - **Sceneboard recipes auto-lock motion across all panels** — per-slide variation is ignored when visualType is sceneboard.
 - **Library audio resolves URLs at attach time** — if `set_audio({source:"library"})` errors with "asset not found", pick a different `assetId` from `get_music_library`.
 
