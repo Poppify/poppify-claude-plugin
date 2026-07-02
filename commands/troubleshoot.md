@@ -20,7 +20,7 @@ Invoke the `poppify-troubleshoot` skill and walk the user through:
 
 2. **Apply the corresponding action** from the skill's decision tree. Most fixes are one tool call + re-`confirm`.
 
-3. **Verify the fix** by running `/poppify:verify-render` on the new render before handing it back to the user.
+3. **Verify the fix** — if your client has a shell with ffmpeg, `/poppify:verify-render` gives a deep check; otherwise just re-`get_result` and confirm the reported symptom is gone (e.g. audio now attached, text finalized). Verification is optional, not a gate.
 
 4. **If the symptom doesn't match any category**, file via `submit_feedback({ apiKey, sessionId, kind: "bug", description: ... })`.
 

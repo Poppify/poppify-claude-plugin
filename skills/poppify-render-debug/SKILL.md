@@ -1,19 +1,23 @@
 ---
 name: poppify-render-debug
-description: Verify a rendered Poppify reel by downloading the MP4, running ffprobe, and extracting sample frames. Use after confirm() returns videoUrl, OR when the user says: "check the video", "verify the reel", "is the render OK", "the video looks wrong", "missing audio", "no music", "no sound", "captions missing", "captions wrong color", "text is wrong color", "wrong duration", "video is too short", "video is too long", "no captions on slide N", or any similar verification / debugging request on a finished Poppify render. Produces a Markdown verdict table.
+description: OPTIONAL deep-verify of a finished Poppify render — downloads the MP4, runs ffprobe, and extracts sample frames. Requires a local shell with ffmpeg + ffprobe + curl (available in Claude Code; NOT in shell-less clients like Claude Desktop). Reach for it when the user reports a problem ("the video looks wrong", "missing audio", "no music", "captions missing", "wrong color text", "wrong duration") or explicitly asks to verify the reel. It is never a required step — a clean render does not need it.
 ---
 
-# Verifying a Poppify render
+# Verifying a Poppify render (optional)
 
-Once `get_result({ sessionId, apiKey })` returns `status: "complete"` with a `videoUrl`, run this verification BEFORE handing the URL to the user. The signed GCS URL is short-lived (~23h), so verify and inform in one shot.
+This is an **optional** diagnostic, not a mandatory post-render step. Most renders are fine and can be handed straight to the user. Use it when the user reports something wrong, or explicitly asks you to check the file.
 
-## Prerequisites
+## Capability gate — check BEFORE attempting
+
+This skill needs a local shell with `ffmpeg`, `ffprobe`, and `curl`. Many MCP clients (Claude Desktop, web, most non-CLI hosts) have **no shell tool at all** — there is nothing to run these in.
 
 ```bash
-which ffprobe ffmpeg curl   # all three should exist
+which ffprobe ffmpeg curl   # all three must exist to proceed
 ```
 
-If ffmpeg/ffprobe are missing: `brew install ffmpeg` on macOS, `apt-get install ffmpeg` on Debian/Ubuntu.
+- **If you have no Bash/shell tool, or the check fails:** SKIP this skill. Do NOT tell the user to install anything. Just hand them the `videoUrl` and suggest they watch it; if they report a specific issue, fall back to the `poppify-troubleshoot` decision tree (which is pure MCP-tool reasoning, no shell needed).
+- **If ffprobe/ffmpeg are missing but you DO have a shell:** offer — don't insist — that they can `brew install ffmpeg` (macOS) / `apt-get install ffmpeg` (Debian/Ubuntu) if they want the deep check. Otherwise skip.
+- **Only if all three exist:** proceed below.
 
 ## Step 1 — Download the MP4
 
@@ -73,7 +77,7 @@ Output a small Markdown table:
 | All slides have captions | ⚠️ slide 3 has no caption (intentional? check session.slides[3].voiceoverShort) |
 ```
 
-If everything is green, hand the URL to the user with a note that it expires in ~23h. If anything is red, surface the specific failure and offer to re-render with a corrected patch.
+If everything is green, hand the URL to the user (the signed URL is valid ~7 days). If anything is red, surface the specific failure and offer to re-render with a corrected patch.
 
 ## Common failure patterns
 

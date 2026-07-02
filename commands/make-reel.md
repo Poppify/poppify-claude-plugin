@@ -34,4 +34,6 @@ Invoke the `poppify-build-reel` skill and follow its flow:
 
 7. **Optional Live Motion upgrade** (only AFTER the user has seen the cinematic baseline): to animate the subject inside a slide, `search_live_library` first (cache hits free), else `update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction})` + `generate_live_motion` (10 seeds/clip, Veo 3.1 Lite). Recommend at most one live slide, usually the hook. Never apply it before the baseline render.
 
+8. **Optional consistency / before-after** (5 seeds/frame, same as an image): for the SAME subject across slides, `generate_frames({referenceAssetId|referenceImageUrl, prompt:"same subject, <new pose/scene>"})` → `set_image`, animate normally. For a before/after transformation in ONE slide, `generate_frames` the "after", then `update_slides({action:"set_motion_mode", ..., endFrameUri:<after url>})` so Veo interpolates start → end. Each frame is one intentional call — not a random batch. Send `endFrameUri` only for transitions, never for plain micro-motion.
+
 For verification of the finished MP4, use `/poppify:verify-render`. For symptoms (wrong color, missing audio, etc.), use `/poppify:troubleshoot`.

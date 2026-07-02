@@ -1,6 +1,6 @@
 ---
 name: poppify-build-reel
-description: Canonical photo-led / topic-led flow for the Poppify MCP. Use whenever the user wants: a reel, short video, vertical video, Instagram reel, TikTok video, TikTok, YouTube Short, YouTube Shorts, Facebook reel, FB reel, 15-second video, 30-second video, 60-second video, photo slideshow, photo to video, animate photos, photo animation, slideshow video, social media video, content for social, brand video, product reel, ad creative for social, before/after reel, transformation video, story reel, hook video, or any vertical short-form video for IG/TikTok/YT/FB. Covers the free customize loop and the single paid confirm step. Base render = 1 seed (~$0.06). 50 free seeds on signup. Use poppify-troubleshoot if the render comes out wrong; poppify-render-debug to verify the finished MP4.
+description: Canonical photo-led / topic-led flow for the Poppify MCP. Use whenever the user wants: a reel, short video, vertical video, Instagram reel, TikTok video, TikTok, YouTube Short, YouTube Shorts, Facebook reel, FB reel, 15-second video, 30-second video, 60-second video, photo slideshow, photo to video, animate photos, photo animation, slideshow video, social media video, content for social, brand video, product reel, ad creative for social, before/after reel, transformation video, story reel, hook video, or any vertical short-form video for IG/TikTok/YT/FB. Covers the free customize loop and the single paid confirm step. Base render = 1 seed (~$0.06). 50 free seeds on signup. Use poppify-troubleshoot if the render comes out wrong; poppify-render-debug is an OPTIONAL deep MP4 check for clients that have a shell with ffmpeg (e.g. Claude Code) — skip it on shell-less clients.
 ---
 
 # Building a Poppify reel — the canonical flow
@@ -128,7 +128,7 @@ Charges seeds. Render typically completes in 30–120s. Poll:
 get_result({ sessionId, apiKey })
 ```
 
-When `status === "complete"`, you get a `videoUrl` (signed GCS URL, expires in ~23h). **Download it immediately** — the URL is short-lived. Don't tell the user "we emailed it" — Poppify does not email rendered reels; the URL is the only delivery surface.
+When `status === "complete"`, you get a `videoUrl` (signed GCS URL, valid ~7 days). **Give the user the URL right away** — it's the only delivery surface (Poppify does not email rendered reels). If your client has a shell (e.g. Claude Code), it's good practice to also save a local copy (`curl -L -o reel.mp4 "<videoUrl>"`) so the user keeps it past the expiry — but that's an enhancement, not a requirement. Shell-less clients (Claude Desktop, web) simply share the URL and tell the user to download it from their browser.
 
 ## Step 6 — OPTIONAL: Live Motion (a per-slide upgrade, only AFTER baseline review)
 
@@ -143,9 +143,31 @@ When the user wants it:
 
 Recommend **at most one** live slide, usually the hook (slide 0) — a living subject in the first frame stops the scroll. Quote the planner's per-slide score to justify the pick.
 
+## Step 7 — OPTIONAL: consistent frames (`generate_frames`) + before/after interpolation (`endFrameUri`)
+
+Two optional capabilities that unlock character-consistent reels and before/after transformations. They compose but are used at **different moments** — don't conflate them.
+
+**`generate_frames` — a new still of an EXISTING subject (image stage, before motion).** Same cost as `generate_image` (5 seeds). Give it a reference subject (`referenceAssetId` or `referenceImageUrl` — a prior `generate_image`/`generate_frames` result, or an uploaded photo) plus a prompt, and it returns ONE frame of that same subject in the new pose/expression/scene you describe. **Each frame is generated with intent — one deliberate call per frame, never a random batch.** Two consumers:
+- **Same subject across slides** → `generate_frames` for each slide, then `update_slides({action:"set_image", slideIndex, imageUrl})`, animate normally. This is the consistency path — **no last frame**.
+- **A specific "after" state** (clean room, styled product, logo revealed) → becomes the end frame below.
+
+**`endFrameUri` — send a last frame so ONE clip travels start → end. Opt-in, transitions only.** Set it on `set_motion_mode`; Veo bridges the slide's start image → the end frame instead of free-running. Use ONLY for before/after within a slide, a controlled morph, or a deterministic landing. **Do NOT** send a last frame for ordinary micro-motion (breath/blink/gaze) — that's plain i2v and wants no endpoint.
+
+Before/after transformation slide (the chain):
+```
+generate_image (or photo)                                    # the "before" (slide start image)
+generate_frames({ referenceImageUrl:<before>, prompt:"same subject, <after state>" })   # the "after"
+update_slides({ action:"set_motion_mode", slideIndex, motionMode:"live", liveAction:"<verb>", endFrameUri:<after url> })
+preview_live_prompt → generate_live_motion                    # Veo interpolates before → after
+```
+
+Decision shortcut: **same subject across slides → `generate_frames` then `set_image`, no last frame. Before/after or morph within one slide → `generate_frames` for the "after", then send it as `endFrameUri`.**
+
+> ⚠️ Start+end interpolation on Veo 3.1 Lite (the default provider) is newly wired — confirm the render actually bridged the two frames before promising a client it always will; if a run ignores the end frame, fall back to two slides with a hard cut.
+
 ## Gotchas worth knowing
 
-- **Don't burn seeds on text-heavy slides.** Gemini Imagen garbles literal text (terminal frames, install commands, stat callouts). For those: HTML/CSS screencap locally → `upload_asset` → `update_slides({action:"set_image", slideIndex, imageUrl:accessUrl})`. ZERO seeds.
+- **Don't burn seeds on text-heavy slides.** Gemini Imagen garbles literal text (terminal frames, install commands, stat callouts). On a shell-capable client (Claude Code): invoke the `poppify-text-card` skill to render a pixel-perfect card locally (cross-platform) → `upload_asset` → `set_image`. ZERO seeds. On a shell-less client (Claude Desktop/web): let the composer draw the text as a caption (`set_text` — crisp drawtext, not garbled), and reserve rendered cards for specialty typography you can ingest via `upload_asset({sourceUrl|dataBase64})`.
 - **Single-image reel → ONE continuous camera move.** When one image carries all slides, keep a SINGLE `videoEffect` and leave `continuousEffect` on (default `true`). The renderer then makes one continuous move across the whole reel via a global frame offset. **Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing** — each slide gets its own independent move and the motion visibly resets at every cut. Only use per-slide `slideEffects` when the slides have *different* images.
 - **Composer draws caption text BY DEFAULT** from `slides[i].voiceoverShort`. Empty string = skipped.
 - **Slide duration is a hierarchy, no global control.** Four rules, top wins: (1) voiceover audio length when attached (binding); (2) text-length formula `(words/2.6)*1.2` when text exists; (3) explicit `slide.duration` for blank text-baked cards; (4) 4s default for blank slides. To make a slide last longer: write MORE text. `customize({duration})` is rejected — no session-level duration control.

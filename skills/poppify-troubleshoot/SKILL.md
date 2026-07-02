@@ -109,6 +109,12 @@ If still nothing > score 40: fall through to `generate_image` (5 seeds). Worksho
 
 **Action**: `update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction:"<verb>"})` THEN `generate_live_motion({sessionId, slideIndex})` (10 seeds, or free on a `search_live_library` cache hit ≥ 60). Confirm the cinematic baseline was rendered and reviewed first — live motion is offered only after that.
 
+### "Before/after didn't interpolate / the clip ignored the end frame"
+
+**Most likely**: `endFrameUri` was set but Veo 3.1 Lite (the default provider) did not honor the last frame on this render. Start+end interpolation is confirmed on Veo 3.1 / Fast; on Lite via the Gemini API it is newly wired and not guaranteed on every run.
+
+**Action**: verify `endFrameUri` actually landed on the slide (`update_slides` echoes `liveMotion.endFrameUri`). If it's set and the motion still free-ran, fall back to a **hard cut**: make the "before" and "after" two separate slides (each its own `set_image`), or animate only the start image. File `submit_feedback` noting the end frame was dropped so the Vertex/last-frame path can be prioritized.
+
 ## When to file feedback
 
 If the symptom doesn't match any of the above, OR you've followed the action and the issue persists, call:
