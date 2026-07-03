@@ -34,7 +34,7 @@ The full recipe, in order:
 1. **Start image** on the slide (photo or `generate_image`).
 2. **End frame via `generate_frames`** — MUST be composition-locked. Prompt template:
    > "Same camera position, same framing, same background/setting. Only *\<the delta\>* changes. Subject *\<geometric consequence of the action — e.g. two steps lower, closer to camera, larger in frame\>*."
-3. **`update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction, endFrameUri, liveDurationSeconds: 6})`** — pass 6 (or 8) explicitly; the default rounds from the slide's text duration and 4s morphs smear.
+3. **`update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction, endFrameUri, liveDurationSeconds: 8})`** — pass 8 explicitly: the current provider (Veo 3.1 Lite) REJECTS `lastFrame` at 4s/6s with `400 INVALID_ARGUMENT ("use case not supported")`; 8 is the only working bucket for bridged renders.
 4. **`preview_live_prompt`** — reference only in this mode. The auto prompt is single-frame style (camera move + slow-motion suffix); do NOT ship it for a bridged render.
 5. **Author the journey `overridePrompt`** (template below).
 6. **`search_live_library`** (bridged renders cache in their own slot) → **`generate_live_motion({sessionId, slideIndex, overridePrompt})`**.
@@ -64,12 +64,13 @@ Describe the JOURNEY between the frames — the frames already carry the endpoin
 | Ghost duplicate of the subject | End frame not composition-locked (camera/framing drifted) | Regenerate end frame with the lock template |
 | Motion goes backwards / subject drifts away | End-frame geometry contradicts the action | Regenerate end frame showing the geometric consequence of the motion |
 | Identity drift (face/outfit changes) | Too many simultaneous changes | One transformation per clip; shrink the pose delta |
-| Rushed, jump-cut smear | 4s bucket on a real transformation | `liveDurationSeconds: 6` (or 8) |
+| Rushed, jump-cut smear | too-short bucket on a real transformation | `liveDurationSeconds: 8` |
+| `400 INVALID_ARGUMENT` ("use case not supported") on generate | `lastFrame` + 4s/6s duration on Veo 3.1 Lite | Set `liveDurationSeconds: 8` — the only bucket the provider accepts with an end frame (seeds auto-refund on the failure) |
 | Clip ignores the end frame entirely (free-runs) | Provider support, not prompting | Re-check `endFrameUri` was set on the slide; if confirmed, flag it — this is a provider issue |
 
 ## 6. Duration, cost, cache
 
-- Veo buckets: **4 / 6 / 8s**. Morphs: 6s floor (4 smears, 8 drifts). Explicit `liveDurationSeconds` always wins.
+- Veo buckets: **4 / 6 / 8s** for plain i2v. **Bridged renders: 8s ONLY** — Veo 3.1 Lite rejects `lastFrame` at 4/6 (400). Explicit `liveDurationSeconds` always wins over the rounded default.
 - **10 seeds/clip** (~$0.40); failures auto-refund. Cache hits via `search_live_library` are free.
 - Bridged renders cache separately from plain animations of the same start image, and **override prompts get their own cache slot** — iterating on the overridePrompt never collides with earlier renders. `forceRender: true` for a deliberate re-roll.
 
