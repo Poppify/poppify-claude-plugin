@@ -70,10 +70,11 @@ apply_session_patch({
   textAnimation: "phrase_reveal",          // typewriter | bold_captions | phrase_reveal
   videoEffect: "ken_burns",                // session-wide motion
   audioMood: "uplifting",
-  // NOTE: no `duration` knob. Reel duration is driven by per-slide content
-  // (voiceover length > text length > explicit slide.duration > 4s default).
-  // To change runtime: write more/fewer words, add/remove slides, or set
-  // slide.duration on blank text-baked cards.
+  // NOTE: no SESSION-level `duration` knob. Per-slide length is resolved as:
+  // media floors (voiceover audio + a rendered live-motion clip) ALWAYS play in
+  // full; then explicit set_duration (any slide, capped 2–15s) or text-length
+  // drive the rest; 4s default. To change runtime: write more/fewer words, use
+  // set_duration on any slide, or add/remove slides.
   // Per-slide motion overrides (takes precedence over session-wide)
   slideEffects: [
     { slideIndex: 3, videoEffect: "focus_pull" }  // end card → minimal motion
@@ -148,9 +149,9 @@ Recommend **at most one** live slide, usually the hook (slide 0) — a living su
 - **Don't burn seeds on text-heavy slides.** Gemini Imagen garbles literal text (terminal frames, install commands, stat callouts). For those: HTML/CSS screencap locally → `upload_asset` → `update_slides({action:"set_image", slideIndex, imageUrl:accessUrl})`. ZERO seeds.
 - **Single-image reel → ONE continuous camera move.** When one image carries all slides, keep a SINGLE `videoEffect` and leave `continuousEffect` on (default `true`). The renderer then makes one continuous move across the whole reel via a global frame offset. **Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing** — each slide gets its own independent move and the motion visibly resets at every cut. Only use per-slide `slideEffects` when the slides have *different* images.
 - **Composer draws caption text BY DEFAULT** from `slides[i].voiceoverShort`. Empty string = skipped.
-- **Slide duration is a hierarchy, no global control.** Four rules, top wins: (1) voiceover audio length when attached (binding); (2) text-length formula `(words/2.6)*1.2` when text exists; (3) explicit `slide.duration` for blank text-baked cards; (4) 4s default for blank slides. To make a slide last longer: write MORE text. `customize({duration})` is rejected — no session-level duration control.
+- **Slide duration: two DRIVERS + two MEDIA FLOORS, no global control.** Media floors always play in full: (1) attached **voiceover** audio, (2) a rendered **live-motion (Veo) clip** — so an 8s morph slide holds all 8s even under a short caption (you do NOT pad the caption). Drivers: (3) **EXPLICIT** `update_slides({action:"set_duration", slideIndex, duration:N})` on ANY slide — overrides text-length, capped 2–15s, never shortens the media floor; (4) **TEXT-LENGTH** `(words/2.6)*1.2` otherwise; 4s default for a blank slide. Lengthen a slide: write MORE text OR use set_duration. `customize({duration})` is rejected — no session-level control. **Use text** for normal captioned slides; **use set_duration** for text-baked cards or any precise hold.
 - **Voiceover auto-detaches when text changes.** The text you write IS the voiceover script. `update_slides({action:"set_text"})` on a slide with attached voiceover detaches it (old audio of wrong words). Call `generate_voiceover` ONLY after text is finalized — otherwise you waste 5 seeds per text edit.
-- **Text cards (terminal screencaps, end cards)**: `set_image` an image with text already baked in, then `update_slides({action:"set_text", slideIndex, newText:""})`. Empty string suppresses composer text overlay. Slide duration falls back to 4s.
+- **Text cards (terminal screencaps, end cards)**: `set_image` an image with text already baked in, then `update_slides({action:"set_text", slideIndex, newText:""})`. Empty string suppresses composer text overlay. Hold it as long as you want with `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s) — set_duration works on any slide, so you no longer have to blank the caption first just to control the hold. Blank slide with no explicit duration falls back to 4s.
 - **Sceneboard recipes auto-lock motion across all panels** — per-slide variation is ignored when visualType is sceneboard.
 - **Library audio resolves URLs at attach time** — if `set_audio({source:"library"})` errors with "asset not found", pick a different `assetId` from `get_music_library`.
 

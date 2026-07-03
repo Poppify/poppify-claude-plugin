@@ -71,11 +71,15 @@ If `videoUrl` returned but the URL doesn't open: the URL has expired and Poppify
 
 ### "Video duration is wrong"
 
-**Most likely**: text length drives slide duration. If user asked for a 30s reel but got 18s, slides have too little text.
+**Most likely**: slide length is driven by text length OR an explicit per-slide duration. A reel shorter than expected means the slides have too little text and no explicit duration.
 
-**Action**: add more text to the short slides via `update_slides({action:"set_text", newText:"longer text"})` and re-render. There's no per-slide duration knob — text length is the only lever.
+**Action**: two levers — write more text on the short slides (`update_slides({action:"set_text", newText:"longer text"})`), OR set an explicit hold with `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s, works on ANY slide, overrides the text-length formula). There's no session-level duration knob. Note: **voiceover audio and rendered live-motion clips always play in full** — they're media floors, never scaled down.
 
-If `session.duration` was set but the reel is shorter: confirm via `get_session_summary` (when available) or `get_result` that `duration` is still `"30s"`. Customize may have been called with conflicting values.
+### "The live-motion / morph clip is cut short" (e.g. an 8s Veo clip only plays ~2s)
+
+**Most likely**: on older builds the live slide followed the caption's text-length instead of the clip length, truncating the Veo clip. The duration resolver now treats a rendered live clip as a **media floor** (always plays in full), so this is fixed on current builds.
+
+**Action**: if a live clip is still cut short, set an explicit floor with `update_slides({action:"set_duration", slideIndex, duration:8})` on that live slide, then re-render. Do NOT try to fix it by padding the caption — the clip length binds on its own now.
 
 ### "The image in slide N looks wrong / has text baked in"
 
