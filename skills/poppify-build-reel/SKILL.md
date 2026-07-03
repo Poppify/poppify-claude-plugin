@@ -135,6 +135,8 @@ When `status === "complete"`, you get a `videoUrl` (signed GCS URL, expires in ~
 
 Live Motion animates the **subject inside a still** (blink, breath, micro-gesture, a small action) using Veo 3.1 Lite image-to-video, while the FFmpeg camera motion layers on top. It is an OPTIONAL upgrade, NOT a default — the flow is **render the cinematic baseline → user reviews → optionally upgrade selected slides to live**. Never apply it before the user has seen the cinematic render; you'd risk burning seeds on a reel they might already love.
 
+> **For before/after transformations (`endFrameUri` first/last-frame interpolation), invoke the `poppify-live-motion` skill first** — bridged renders need a composition-locked end frame and an authored journey `overridePrompt`; the auto prompt is wrong for that mode.
+
 When the user wants it:
 1. `search_live_library({ apiKey, imageHash?, actionKeywords, durationSeconds, provider:"veo-3.1-lite" })` FIRST — cache hits (score ≥ 60) attach for **zero seeds**.
 2. `suggest_live_action({ sessionId, slideIndex })` → pick a motion verb; `preview_live_prompt` is free.
