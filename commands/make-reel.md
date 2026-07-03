@@ -28,7 +28,7 @@ Invoke the `poppify-build-reel` skill and follow its flow:
 
 4. Use `search_visual_library` and `get_music_library` BEFORE recommending `generate_image` / `generate_music` — library matches are free; generation is 5 seeds each. Attach images per-slide via `update_slides({action:"set_image", slideIndex, imageUrl})` (or `apply_session_patch({slides:[{index, imageUrl}]})`) — **not** the legacy pool. To swap music, `set_audio` / `apply_session_patch.audio`.
 
-5. When ready: `get_price` to confirm seed cost, then `confirm({ sessionId, apiKey })`. Poll `get_result` every 20–30 seconds. When complete, hand the `videoUrl` to the user with the note that it expires in ~23h.
+5. When ready: `get_price` to confirm seed cost, then `confirm({ sessionId, apiKey })`. Poll `get_result` every 20–30 seconds. When complete, hand the `videoUrl` to the user with the note that it's valid ~7 days.
 
 6. **Single-image reels**: when one image carries the whole reel, keep ONE `videoEffect` and leave `continuousEffect` on (default) so the camera makes one continuous move across the slides. Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing and produces a visible reset at each cut.
 

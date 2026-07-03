@@ -60,7 +60,7 @@ If `status === "rendering"` for > 5 minutes: the render is genuinely stuck (rare
 
 ### "I got the video URL but it doesn't open"
 
-**Most likely**: the signed GCS URL expired. Default TTL is ~23h.
+**Most likely**: the signed GCS URL expired. Default TTL is ~7 days (after which the object is also reaped).
 
 **Action**:
 ```
