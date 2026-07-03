@@ -34,4 +34,6 @@ Invoke the `poppify-build-reel` skill and follow its flow:
 
 7. **Optional Live Motion upgrade** (only AFTER the user has seen the cinematic baseline): to animate the subject inside a slide, `search_live_library` first (cache hits free), else `update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction})` + `generate_live_motion` (10 seeds/clip, Veo 3.1 Lite). Recommend at most one live slide, usually the hook. Never apply it before the baseline render.
 
+8. **Reel length is per-slide — no global knob.** Two DRIVERS: text length, or an explicit `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s, works on ANY slide, overrides the text-length formula). Two MEDIA FLOORS that always play in full: attached voiceover audio and a rendered live-motion (Veo) clip — so an **8s morph slide holds all 8s**; never pad a caption to keep a clip on screen. Lengthen a slide by writing more text OR set_duration.
+
 For verification of the finished MP4, use `/poppify:verify-render`. For symptoms (wrong color, missing audio, etc.), use `/poppify:troubleshoot`.
