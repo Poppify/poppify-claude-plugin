@@ -16,7 +16,7 @@ Find the symptom that matches, then take the suggested action. Most root causes 
 **Action**: call `get_result` and check `session.selectedAudio.resolvedUrl`. If null/empty:
 ```
 get_music_library({ apiKey })                      // get fresh assetIds
-set_audio({ sessionId, source: "library", assetId: <new id> })
+apply_session_patch({ sessionId, audio: { source: "library", assetId: <new id> } })
 confirm({ sessionId, apiKey })                     // re-render (seeds re-charged)
 ```
 
@@ -24,9 +24,9 @@ If `resolvedUrl` is populated but audio still missing in the MP4: open `poppify-
 
 ### "Caption text is the wrong color"
 
-**Most likely**: `textColor` parameter was dropped because the deployed customize schema doesn't expose it (schema/code drift bug).
+**Most likely**: `textColor` parameter was dropped because the deployed `apply_session_patch` schema doesn't expose it (schema/code drift bug).
 
-**Action**: invoke the `poppify-schema-introspect` skill to verify. If `textColor` is in the schema but the render still ignored it, check the session via `get_result` — the field should appear on `session.textColor`. If missing on the session, your `customize` / `apply_session_patch` call dropped it client-side; re-call with the correct field name and re-`confirm`.
+**Action**: invoke the `poppify-schema-introspect` skill to verify. If `textColor` is in the schema but the render still ignored it, check the session via `get_result` — the field should appear on `session.textColor`. If missing on the session, your `apply_session_patch` call dropped it client-side; re-call with the correct field name and re-`confirm`.
 
 ### "Captions don't appear on some slides"
 
@@ -54,7 +54,7 @@ Don't override `textPosition` unless you know why. The default position comes fr
 get_result({ sessionId, apiKey })
 ```
 
-If `status === "failed"`: the render error is in `session.renderError`. Confirm seeds were refunded (`get_balance` should show the seeds back) — Poppify refunds on render-error automatically. If the balance is not refunded, file via `submit_feedback`.
+If `status === "failed"`: the render error is in `session.renderError`. Confirm seeds were refunded (`wallet({action:"balance"})` should show the seeds back) — Poppify refunds on render-error automatically. If the balance is not refunded, file via `submit_feedback`.
 
 If `status === "rendering"` for > 5 minutes: the render is genuinely stuck (rare). File via `submit_feedback({ sessionId, kind: "stuck_render" })`.
 
@@ -86,14 +86,14 @@ If `videoUrl` returned but the URL doesn't open: the URL has expired and Poppify
 **Most likely**: `generate_image` was called for a text-heavy concept and Gemini Imagen garbled the literal text into the image, AND composer drew drawtext on top — so the slide has double text.
 
 **Action**:
-- For text-heavy slides (terminal frames, install commands, stat callouts, end cards): render text-on-bg locally via HTML/CSS screencap + `upload_asset`, then attach via `update_slides({action:"set_image", slideIndex, imageUrl:accessUrl})` + `update_slides({action:"set_text", slideIndex, newText:""})` (so composer doesn't add text on top). (`set_image` is the slide-first attach path; `update_visual` is the legacy pool path and fails when the pool is empty.)
-- For non-text-heavy slides where AI image is fine: just re-generate with a sharper `suggest_image_prompt` first (free).
+- For text-heavy slides (terminal frames, install commands, stat callouts, end cards): render text-on-bg locally via HTML/CSS screencap + `upload_asset`, then attach via `update_slides({action:"set_image", slideIndex, imageUrl:accessUrl})` + `update_slides({action:"set_text", slideIndex, newText:""})` (so composer doesn't add text on top). (`set_image` is the way to attach a slide's image; insert/splice pool edits go through `apply_session_patch({visualEdits:[...]})`.)
+- For non-text-heavy slides where AI image is fine: just re-generate with a sharper prompt — workshop it with `suggest_prompt({kind:"image"})` first (free).
 
 ### "Library search returned nothing relevant"
 
 **Action**: refine the query. Library scoring weights **Visual Hint Match (tag/keyword)** at 50/100 points — generic queries score low. Use specific keywords from the slide's `voiceoverShort` or concept hook.
 
-If still nothing > score 40: fall through to `generate_image` (5 seeds). Workshop the prompt with `suggest_image_prompt` for free before generating.
+If still nothing > score 40: fall through to `generate_image` (5 seeds). Workshop the prompt with `suggest_prompt({kind:"image"})` for free before generating.
 
 ### "Single-image reel has jerky / resetting motion at each cut"
 
@@ -105,7 +105,7 @@ If still nothing > score 40: fall through to `generate_image` (5 seeds). Worksho
 
 **Most likely**: images were placed per-slide via `set_image` but you're on an older deployment whose confirm gate only checked the legacy pool. On current builds, `confirm()` accepts any session where a slide carries its own `imageUrl`.
 
-**Action**: confirm at least one `session.slides[i].imageUrl` is populated (via `get_slide_plan`). If it is and confirm still rejects, the deployment is stale — `update_visual({action:"insert_before", slideIndex:0, source:"user_url", url})` seeds the legacy pool as a fallback, or file `submit_feedback`. Do NOT use `update_visual({action:"replace"})` on a topic-led session — the pool is empty so it errors.
+**Action**: confirm at least one `session.slides[i].imageUrl` is populated (via `get_slide_plan`). If it is and confirm still rejects, the deployment is stale — `apply_session_patch({visualEdits:[{action:"insert_before", slideIndex:0, source:"user_url", url}]})` seeds the pool as a fallback, or file `submit_feedback`. Do NOT use a pool `replace` edit on a topic-led session — the pool is empty so it errors; `update_slides({action:"set_image", slideIndex, imageUrl})` is the way to replace a slide's image.
 
 ### "Live motion didn't apply / subject isn't moving"
 

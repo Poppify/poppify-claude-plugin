@@ -1,13 +1,13 @@
 ---
 name: poppify-build-reel
-description: Canonical photo-led / topic-led flow for the Poppify MCP. Use whenever the user wants: a reel, short video, vertical video, Instagram reel, TikTok video, TikTok, YouTube Short, YouTube Shorts, Facebook reel, FB reel, 15-second video, 30-second video, 60-second video, photo slideshow, photo to video, animate photos, photo animation, slideshow video, social media video, content for social, brand video, product reel, ad creative for social, before/after reel, transformation video, story reel, hook video, or any vertical short-form video for IG/TikTok/YT/FB. Covers the free customize loop and the single paid confirm step. Base render = 1 seed (~$0.06). 50 free seeds on signup. Use poppify-troubleshoot if the render comes out wrong; poppify-render-debug to verify the finished MP4.
+description: Canonical photo-led / topic-led flow for the Poppify MCP. Use whenever the user wants: a reel, short video, vertical video, Instagram reel, TikTok video, TikTok, YouTube Short, YouTube Shorts, Facebook reel, FB reel, 15-second video, 30-second video, 60-second video, photo slideshow, photo to video, animate photos, photo animation, slideshow video, social media video, content for social, brand video, product reel, ad creative for social, before/after reel, transformation video, story reel, hook video, or any vertical short-form video for IG/TikTok/YT/FB. Covers the free customization loop and the single paid confirm step. Base render = 1 seed (~$0.06). 50 free seeds on signup. Use poppify-troubleshoot if the render comes out wrong; poppify-render-debug to verify the finished MP4.
 ---
 
 # Building a Poppify reel — the canonical flow
 
 Poppify is FREE for everything except `confirm` (1 seed base render) and the `generate_*` tools (5 seeds each for AI image / music / voiceover; `generate_live_motion` is 10 seeds per clip). You can iterate the configuration **infinitely** before render and not spend anything.
 
-> **Think in SLIDES, not a photo pool.** Every beat owns its image at `slides[i].imageUrl`. Attach or swap a beat's visual with `update_slides({action:"set_image", slideIndex, imageUrl})`, or set several at once via `apply_session_patch({slides:[{index, imageUrl}]})`. The legacy `update_visual` operates on a `photoUrls` pool and **fails when the pool is empty** (every topic-led session) — prefer `set_image`.
+> **Think in SLIDES, not a photo pool.** Every beat owns its image at `slides[i].imageUrl`. Attach or swap a beat's visual with `update_slides({action:"set_image", slideIndex, imageUrl})`, or set several at once via `apply_session_patch({slides:[{index, imageUrl}]})`. For insert/splice edits to the slide sequence, use `apply_session_patch({visualEdits:[...]})` — `set_image` is the way to set or swap an existing beat's image.
 
 ## Step 1 — Mint a wallet (one-time, free)
 
@@ -42,7 +42,7 @@ Returns: slides[] (each with `voiceoverShort` text), caption, hashtags, callToAc
 start_session({ apiKey, topic, audience, goal, platform })
 ```
 
-Returns 5 concept options. Pick one with `refine_concept`. **A topic-led session starts with NO images** — every slide's `imageUrl` is empty. You MUST give at least one slide an image (Step 4) before `confirm`, or it refunds with `topic_led_no_images`. The `recipeDistribution` field shows which recipes the 5 concepts span; if they collapsed off-brief (e.g. you wanted a tribute/hype angle but got all confessional), call `start_session` again with an explicit `recipe` parameter (`list_recipes()` for IDs).
+Returns 5 concept options. Pick one with `refine_concept`. **A topic-led session starts with NO images** — every slide's `imageUrl` is empty. You MUST give at least one slide an image (Step 4) before `confirm`, or it refunds with `topic_led_no_images`. The `recipeDistribution` field shows which recipes the 5 concepts span; if they collapsed off-brief (e.g. you wanted a tribute/hype angle but got all confessional), call `start_session` again with an explicit `recipe` parameter (`recipes()` for IDs).
 
 ### Decide FIRST: one image, or one per beat?
 
@@ -87,9 +87,9 @@ apply_session_patch({
 If you'd rather iterate one knob at a time, the per-action tools all work:
 - `update_slides({ action: "set_text", slideIndex, newText })` — literal text per slide
 - `update_slides({ action: "set_image", slideIndex, imageUrl })` — set/swap a beat's image (slide-first; this is the way)
-- `customize(...)` — production knobs
-- `set_audio(...)` — attach music
-- `update_visual(...)` — legacy pool replace/insert (works only on photo-led pool sessions; use `set_image` instead)
+- `apply_session_patch({...})` — production knobs (one knob per call works fine)
+- `apply_session_patch({audio:{source, assetId}})` — attach music
+- `apply_session_patch({visualEdits:[...]})` — insert/splice slides (`set_image` is the way to set a beat's image)
 
 **Search the library FIRST** before generating:
 - `search_visual_library({ apiKey, query, limit })` for images — score ≥ 40 should beat AI gen
@@ -100,24 +100,24 @@ If you'd rather iterate one knob at a time, the per-action tools all work:
 These cost 5 seeds each. Always workshop the prompt for free first:
 
 ```
-suggest_image_prompt({ apiKey, slideContext })   // FREE prompt refinement
+suggest_prompt({ apiKey, kind: "image", slideContext })  // FREE prompt refinement
 generate_image({ apiKey, prompt, style })        // 5 seeds, returns image URL
 // Then attach via update_slides({action:"set_image", slideIndex, imageUrl})
 //   — or apply_session_patch({slides:[{index, imageUrl}, ...]}) for several beats.
 //   For a single-image reel, set_image the SAME URL on every slide.
 
-suggest_music_prompt({ apiKey, mood, genre })    // FREE prompt refinement
+suggest_prompt({ apiKey, kind: "music", mood, genre })   // FREE prompt refinement
 generate_music({ apiKey, prompt, durationSeconds }) // 5 seeds, returns URL (max 30s)
-// Then attach via apply_session_patch.audio or set_audio
+// Then attach via apply_session_patch({audio:{source:"user_url", url}})
 
 list_voices({ apiKey })                          // FREE voice catalog
 generate_voiceover({ apiKey, scripts, voiceId }) // 5 seeds per batch
-// Then attach via apply_session_patch.voiceoverSlides or set_voiceover
+// Then attach via apply_session_patch({voiceoverSlides})
 ```
 
 ## Step 5 — Verify, then confirm
 
-Use `get_price({ sessionId })` to see the seed total. Then:
+Use `get_result({ sessionId })` to see the seed total — pre-confirm it returns the exact price breakdown. Then:
 
 ```
 confirm({ sessionId, apiKey, buyerEmail })
@@ -139,23 +139,43 @@ Live Motion animates the **subject inside a still** (blink, breath, micro-gestur
 
 When the user wants it:
 1. `search_live_library({ apiKey, imageHash?, actionKeywords, durationSeconds, provider:"veo-3.1-lite" })` FIRST — cache hits (score ≥ 60) attach for **zero seeds**.
-2. `suggest_live_action({ sessionId, slideIndex })` → pick a motion verb; `preview_live_prompt` is free.
+2. `suggest_live_action({ sessionId, slideIndex })` → pick a motion verb; the `generate_live_motion` dryRun preview is free.
 3. `update_slides({ action:"set_motion_mode", slideIndex, motionMode:"live", liveAction:"<verb>", liveDurationSeconds:<4|6|8> })`.
 4. `generate_live_motion({ sessionId, slideIndex })` — **10 seeds** per clip (capped 8s), or free on a cache hit. ~30–90s wall-clock.
 5. `confirm` again to re-render with the live slide.
 
 Recommend **at most one** live slide, usually the hook (slide 0) — a living subject in the first frame stops the scroll. Quote the planner's per-slide score to justify the pick.
 
+## Step 7 — OPTIONAL: publish or schedule (linked accounts only)
+
+Rendering and publishing are separate. `confirm` produces the MP4 and files a `ready` post in the user's Poppify portfolio; `publish_post` is what sends it to social channels. Both `publish_post` and `portfolio` are FREE.
+
+Preconditions, in order:
+1. **Wallet linked** to the user's Poppify app account: `wallet({action:"link"})` (QR / code). Channels live on the app account.
+2. **Channels connected** — Instagram / TikTok / YouTube / Facebook OAuth happens in the Poppify mobile app only. `portfolio({action:"list"})` shows portfolios + connected channels; multi-brand users switch the active portfolio with `portfolio({action:"switch", portfolioId})`.
+
+Flow after `get_result` returns `complete`:
+
+```
+publish_post({ apiKey, postId })                                  // no channelIds → returns availableChannels + recommendedSlots
+publish_post({ apiKey, postId, channelIds })                      // post NOW (queued; worker publishes within minutes)
+publish_post({ apiKey, postId, channelIds, scheduledAt })         // schedule (ISO, future, before the ~7-day video expiry)
+```
+
+`postId` comes from the `confirm` response (preferred — survives session expiry); `sessionId` also works while the session is alive. **Always show `availableChannels` and let the USER pick** — never auto-select where their content goes. Re-calling reschedules: already-published channels are preserved, deselected unpublished ones are dropped. The user can move or cancel scheduled posts in the Poppify app calendar.
+
+**Scheduling for engagement/reach:** the no-channelIds response also returns `recommendedSlots` — the account's best posting times from its real engagement history (platform norms for new accounts; hours are UTC). Pass a slot's `nextOccurrence` as `scheduledAt`, or `scheduledAt:"best"` to auto-pick the top slot; scheduling responses include a `slotAssessment` ranking the chosen time. For the full playbook (basis handling, sample-size honesty, multi-post spacing), invoke the **`poppify-schedule-optimizer`** skill.
+
 ## Gotchas worth knowing
 
 - **Don't burn seeds on text-heavy slides.** Gemini Imagen garbles literal text (terminal frames, install commands, stat callouts). For those: HTML/CSS screencap locally → `upload_asset` → `update_slides({action:"set_image", slideIndex, imageUrl:accessUrl})`. ZERO seeds.
 - **Single-image reel → ONE continuous camera move.** When one image carries all slides, keep a SINGLE `videoEffect` and leave `continuousEffect` on (default `true`). The renderer then makes one continuous move across the whole reel via a global frame offset. **Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing** — each slide gets its own independent move and the motion visibly resets at every cut. Only use per-slide `slideEffects` when the slides have *different* images.
 - **Composer draws caption text BY DEFAULT** from `slides[i].voiceoverShort`. Empty string = skipped.
-- **Slide duration: two DRIVERS + two MEDIA FLOORS, no global control.** Media floors always play in full: (1) attached **voiceover** audio, (2) a rendered **live-motion (Veo) clip** — so an 8s morph slide holds all 8s even under a short caption (you do NOT pad the caption). Drivers: (3) **EXPLICIT** `update_slides({action:"set_duration", slideIndex, duration:N})` on ANY slide — overrides text-length, capped 2–15s, never shortens the media floor; (4) **TEXT-LENGTH** `(words/2.6)*1.2` otherwise; 4s default for a blank slide. Lengthen a slide: write MORE text OR use set_duration. `customize({duration})` is rejected — no session-level control. **Use text** for normal captioned slides; **use set_duration** for text-baked cards or any precise hold.
+- **Slide duration: two DRIVERS + two MEDIA FLOORS, no global control.** Media floors always play in full: (1) attached **voiceover** audio, (2) a rendered **live-motion (Veo) clip** — so an 8s morph slide holds all 8s even under a short caption (you do NOT pad the caption). Drivers: (3) **EXPLICIT** `update_slides({action:"set_duration", slideIndex, duration:N})` on ANY slide — overrides text-length, capped 2–15s, never shortens the media floor; (4) **TEXT-LENGTH** `(words/2.6)*1.2` otherwise; 4s default for a blank slide. Lengthen a slide: write MORE text OR use set_duration. `apply_session_patch({duration})` is rejected — no session-level control. **Use text** for normal captioned slides; **use set_duration** for text-baked cards or any precise hold.
 - **Voiceover auto-detaches when text changes.** The text you write IS the voiceover script. `update_slides({action:"set_text"})` on a slide with attached voiceover detaches it (old audio of wrong words). Call `generate_voiceover` ONLY after text is finalized — otherwise you waste 5 seeds per text edit.
 - **Text cards (terminal screencaps, end cards)**: `set_image` an image with text already baked in, then `update_slides({action:"set_text", slideIndex, newText:""})`. Empty string suppresses composer text overlay. Hold it as long as you want with `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s) — set_duration works on any slide, so you no longer have to blank the caption first just to control the hold. Blank slide with no explicit duration falls back to 4s.
 - **Sceneboard recipes auto-lock motion across all panels** — per-slide variation is ignored when visualType is sceneboard.
-- **Library audio resolves URLs at attach time** — if `set_audio({source:"library"})` errors with "asset not found", pick a different `assetId` from `get_music_library`.
+- **Library audio resolves URLs at attach time** — if `apply_session_patch({audio:{source:"library", assetId}})` errors with "asset not found", pick a different `assetId` from `get_music_library`.
 
 ## When something looks wrong with the finished video
 
