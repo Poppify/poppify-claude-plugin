@@ -1,23 +1,19 @@
 ---
 name: poppify-render-debug
-description: OPTIONAL deep-verify of a finished Poppify render — downloads the MP4, runs ffprobe, and extracts sample frames. Requires a local shell with ffmpeg + ffprobe + curl (available in Claude Code; NOT in shell-less clients like Claude Desktop). Reach for it when the user reports a problem ("the video looks wrong", "missing audio", "no music", "captions missing", "wrong color text", "wrong duration") or explicitly asks to verify the reel. It is never a required step — a clean render does not need it.
+description: Verify a rendered Poppify reel by downloading the MP4, running ffprobe, and extracting sample frames. Use after confirm() returns videoUrl, OR when the user says: "check the video", "verify the reel", "is the render OK", "the video looks wrong", "missing audio", "no music", "no sound", "captions missing", "captions wrong color", "text is wrong color", "wrong duration", "video is too short", "video is too long", "no captions on slide N", or any similar verification / debugging request on a finished Poppify render. Produces a Markdown verdict table.
 ---
 
-# Verifying a Poppify render (optional)
+# Verifying a Poppify render
 
-This is an **optional** diagnostic, not a mandatory post-render step. Most renders are fine and can be handed straight to the user. Use it when the user reports something wrong, or explicitly asks you to check the file.
+Once `get_result({ sessionId, apiKey })` returns `status: "complete"` with a `videoUrl`, run this verification BEFORE handing the URL to the user. The signed GCS URL is short-lived (~23h), so verify and inform in one shot.
 
-## Capability gate — check BEFORE attempting
-
-This skill needs a local shell with `ffmpeg`, `ffprobe`, and `curl`. Many MCP clients (Claude Desktop, web, most non-CLI hosts) have **no shell tool at all** — there is nothing to run these in.
+## Prerequisites
 
 ```bash
-which ffprobe ffmpeg curl   # all three must exist to proceed
+which ffprobe ffmpeg curl   # all three should exist
 ```
 
-- **If you have no Bash/shell tool, or the check fails:** SKIP this skill. Do NOT tell the user to install anything. Just hand them the `videoUrl` and suggest they watch it; if they report a specific issue, fall back to the `poppify-troubleshoot` decision tree (which is pure MCP-tool reasoning, no shell needed).
-- **If ffprobe/ffmpeg are missing but you DO have a shell:** offer — don't insist — that they can `brew install ffmpeg` (macOS) / `apt-get install ffmpeg` (Debian/Ubuntu) if they want the deep check. Otherwise skip.
-- **Only if all three exist:** proceed below.
+If ffmpeg/ffprobe are missing: `brew install ffmpeg` on macOS, `apt-get install ffmpeg` on Debian/Ubuntu.
 
 ## Step 1 — Download the MP4
 
@@ -77,13 +73,13 @@ Output a small Markdown table:
 | All slides have captions | ⚠️ slide 3 has no caption (intentional? check session.slides[3].voiceoverShort) |
 ```
 
-If everything is green, hand the URL to the user (the signed URL is valid ~7 days). If anything is red, surface the specific failure and offer to re-render with a corrected patch.
+If everything is green, hand the URL to the user with a note that it expires in ~23h. If anything is red, surface the specific failure and offer to re-render with a corrected patch.
 
 ## Common failure patterns
 
-- **Audio stream missing.** Library audio attached without resolution OR `apply_session_patch({audio:...})` was called with an `assetId` that's no longer in the library. Resolution: call `get_music_library` for a fresh asset list, then `apply_session_patch({audio:{source:"library", assetId}})` again, then `confirm` again.
-- **Duration drift > 1s.** Usually means slides ended up with very short `voiceoverShort` text and the renderer's text-driven duration computed below the recipe minimum. Resolution: write longer text on slides via `update_slides set_text`.
-- **Wrong caption color.** If `textColor` was requested but not applied, the MCP apply_session_patch schema may be stale. Re-check current build via `poppify-schema-introspect` skill.
+- **Audio stream missing.** Library audio attached without resolution OR `set_audio` was called with an `assetId` that's no longer in the library. Resolution: call `get_music_library` for a fresh asset list, then `set_audio` again, then `confirm` again.
+- **Duration drift > 1s.** Usually means slides ended up with very short `voiceoverShort` text and no explicit duration, so the text-driven length computed below expectations. Resolution: write longer text (`update_slides set_text`), OR set an explicit per-slide hold via `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s, any slide, overrides text-length). Note: voiceover audio and rendered live-motion clips are media floors that always play in full — they don't drift, so a short live-clip render points at a truncation bug, not text length.
+- **Wrong caption color.** If `textColor` was requested but not applied, the MCP customize schema may be stale. Re-check current build via `poppify-schema-introspect` skill.
 - **Captions baked into the image AND drawn by composer (double text).** Don't render text-heavy slides via `generate_image` — the model bakes text into the image AND composer adds drawtext on top. Use HTML/CSS screencap + `upload_asset` instead, and pass `update_slides({action:"set_text",newText:""})` to skip composer text for that slide.
 
 ## Cleanup

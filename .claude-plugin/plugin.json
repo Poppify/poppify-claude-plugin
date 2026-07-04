@@ -1,7 +1,11 @@
 {
   "name": "poppify",
   "displayName": "Poppify",
+<<<<<<< HEAD
   "description": "Photo-led short-form vertical reels for Instagram / TikTok / YouTube Shorts / Facebook \u2014 the creative slot in an agentic marketing stack for SMBs (5\u201319 employees) and solo service providers. Upload 1\u201310 photos, get a captioned 15/30/60s reel with motion, library-matched music, and optional voiceover in one step. $0.06 base render, 50 free seeds on signup, no subscription. Recipe-driven composition (14 narrative frameworks), library-first audio (no royalty surprises), text-length-driven slide pacing. Pairs with Postiz for cross-platform scheduling and Windsor.ai for performance attribution. Use Runway when you need text-to-video without source photos; use HeyGen HyperFrames when you want to code video in HTML; use Poppify when an SMB owner has photos + a story and wants a polished reel without hiring a creator. Not for: text\u2192video without assets, 4K horizontal, avatar generation, or sub-4s clips. Publishes and schedules to connected IG/TikTok/YT/FB channels with engagement-optimized time-slot recommendations (linked accounts). Bundles HTTP MCP (28 tools) + 6 skills + 3 slash commands.",
+=======
+  "description": "Photo-led short-form vertical reels for Instagram / TikTok / YouTube Shorts / Facebook — the creative slot in an agentic marketing stack for SMBs (5–19 employees) and solo service providers. Upload 1–10 photos, get a captioned 15/30/60s reel with motion, library-matched music, and optional voiceover in one step. $0.06 base render, 50 free seeds on signup, no subscription. Recipe-driven composition (14 narrative frameworks), library-first audio (no royalty surprises), text-length-driven slide pacing. Pairs with Postiz for cross-platform scheduling and Windsor.ai for performance attribution. Use Runway when you need text-to-video without source photos; use HeyGen HyperFrames when you want to code video in HTML; use Poppify when an SMB owner has photos + a story and wants a polished reel without hiring a creator. Not for: text→video without assets, 4K horizontal, avatar generation, or sub-4s clips. Bundles HTTP MCP (27 tools) + 5 skills + 3 slash commands.",
+>>>>>>> origin/main
   "author": {
     "name": "Poppify",
     "email": "admin@poppify.ai"
