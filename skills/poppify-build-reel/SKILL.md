@@ -183,6 +183,8 @@ publish_post({ apiKey, postId, channelIds, scheduledAt })         // schedule (I
 
 `postId` comes from the `confirm` response (preferred — survives session expiry); `sessionId` also works while the session is alive. **Always show `availableChannels` and let the USER pick** — never auto-select where their content goes. Re-calling reschedules: already-published channels are preserved, deselected unpublished ones are dropped. The user can move or cancel scheduled posts in the Poppify app calendar.
 
+**Scheduling for engagement/reach:** the no-channelIds response also returns `recommendedSlots` — the account's best posting times from its real engagement history (platform norms for new accounts; hours are UTC). Pass a slot's `nextOccurrence` as `scheduledAt`, or `scheduledAt:"best"` to auto-pick the top slot; scheduling responses include a `slotAssessment` ranking the chosen time. For the full playbook (basis handling, sample-size honesty, multi-post spacing), invoke the **`poppify-schedule-optimizer`** skill.
+
 ## Gotchas worth knowing
 
 - **Don't burn seeds on text-heavy slides.** Gemini Imagen garbles literal text (terminal frames, install commands, stat callouts). On a shell-capable client (Claude Code): invoke the `poppify-text-card` skill to render a pixel-perfect card locally (cross-platform) → `upload_asset` → `set_image`. ZERO seeds. On a shell-less client (Claude Desktop/web): let the composer draw the text as a caption (`set_text` — crisp drawtext, not garbled), and reserve rendered cards for specialty typography you can ingest via `upload_asset({sourceUrl|dataBase64})`.
