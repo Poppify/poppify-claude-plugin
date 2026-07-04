@@ -81,9 +81,9 @@ If everything is green, hand the URL to the user (the signed URL is valid ~7 day
 
 ## Common failure patterns
 
-- **Audio stream missing.** Library audio attached without resolution OR `set_audio` was called with an `assetId` that's no longer in the library. Resolution: call `get_music_library` for a fresh asset list, then `set_audio` again, then `confirm` again.
+- **Audio stream missing.** Library audio attached without resolution OR `apply_session_patch({audio:...})` was called with an `assetId` that's no longer in the library. Resolution: call `get_music_library` for a fresh asset list, then `apply_session_patch({audio:{source:"library", assetId}})` again, then `confirm` again.
 - **Duration drift > 1s.** Usually means slides ended up with very short `voiceoverShort` text and the renderer's text-driven duration computed below the recipe minimum. Resolution: write longer text on slides via `update_slides set_text`.
-- **Wrong caption color.** If `textColor` was requested but not applied, the MCP customize schema may be stale. Re-check current build via `poppify-schema-introspect` skill.
+- **Wrong caption color.** If `textColor` was requested but not applied, the MCP apply_session_patch schema may be stale. Re-check current build via `poppify-schema-introspect` skill.
 - **Captions baked into the image AND drawn by composer (double text).** Don't render text-heavy slides via `generate_image` — the model bakes text into the image AND composer adds drawtext on top. Use HTML/CSS screencap + `upload_asset` instead, and pass `update_slides({action:"set_text",newText:""})` to skip composer text for that slide.
 
 ## Cleanup

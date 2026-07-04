@@ -26,14 +26,14 @@ Invoke the `poppify-build-reel` skill and follow its flow:
    })
    ```
 
-4. Use `search_visual_library` and `get_music_library` BEFORE recommending `generate_image` / `generate_music` — library matches are free; generation is 5 seeds each. Attach images per-slide via `update_slides({action:"set_image", slideIndex, imageUrl})` (or `apply_session_patch({slides:[{index, imageUrl}]})`) — **not** the legacy pool. To swap music, `set_audio` / `apply_session_patch.audio`.
+4. Use `search_visual_library` and `get_music_library` BEFORE recommending `generate_image` / `generate_music` — library matches are free; generation is 5 seeds each. Attach images per-slide via `update_slides({action:"set_image", slideIndex, imageUrl})` (or `apply_session_patch({slides:[{index, imageUrl}]})`) — **not** the legacy pool. To swap music, `apply_session_patch({audio:{source:"library", assetId}})`.
 
-5. When ready: `get_price` to confirm seed cost, then `confirm({ sessionId, apiKey })`. Poll `get_result` every 20–30 seconds. When complete, hand the `videoUrl` to the user with the note that it's valid ~7 days.
+5. When ready: call `get_result` to confirm seed cost — pre-confirm it returns the exact price breakdown — then `confirm({ sessionId, apiKey })`. Poll `get_result` every 20–30 seconds. When complete, hand the `videoUrl` to the user with the note that it's valid ~7 days.
 
 6. **Single-image reels**: when one image carries the whole reel, keep ONE `videoEffect` and leave `continuousEffect` on (default) so the camera makes one continuous move across the slides. Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing and produces a visible reset at each cut.
 
 7. **Optional Live Motion upgrade** (only AFTER the user has seen the cinematic baseline): to animate the subject inside a slide, `search_live_library` first (cache hits free), else `update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction})` + `generate_live_motion` (10 seeds/clip, Veo 3.1 Lite). Recommend at most one live slide, usually the hook. Never apply it before the baseline render.
 
-8. **Optional consistency / before-after** (5 seeds/frame, same as an image): for the SAME subject across slides, `generate_frames({referenceAssetId|referenceImageUrl, prompt:"same subject, <new pose/scene>"})` → `set_image`, animate normally. For a before/after transformation in ONE slide, `generate_frames` the "after", then `update_slides({action:"set_motion_mode", ..., endFrameUri:<after url>})` so Veo interpolates start → end. Each frame is one intentional call — not a random batch. Send `endFrameUri` only for transitions, never for plain micro-motion.
+8. **Optional consistency / before-after** (5 seeds/frame, same as an image): for the SAME subject across slides, `generate_image({referenceAssetId|referenceImageUrl, prompt:"same subject, <new pose/scene>"})` (consistent-frames mode) → `set_image`, animate normally. For a before/after transformation in ONE slide, `generate_image` the "after" from the same reference, then `update_slides({action:"set_motion_mode", ..., endFrameUri:<after url>})` so Veo interpolates start → end. Each frame is one intentional call — not a random batch. Send `endFrameUri` only for transitions, never for plain micro-motion.
 
 For verification of the finished MP4, use `/poppify:verify-render`. For symptoms (wrong color, missing audio, etc.), use `/poppify:troubleshoot`.

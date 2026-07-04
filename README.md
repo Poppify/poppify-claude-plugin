@@ -14,8 +14,8 @@
 
 | Component | Purpose |
 |---|---|
-| **MCP server** (`https://poppify.ai/mcp`, HTTP) | All Poppify tools: `register`, `start_session_from_photos`, `apply_session_patch`, `customize`, `set_audio`, `generate_image`, `generate_frames`, `confirm`, `get_result`, etc. |
-| **`/poppify:make-reel`** slash command | Guided session flow — photo-led or topic-led entry, free customize loop, paid confirm. |
+| **MCP server** (`https://poppify.ai/mcp`, HTTP) | All Poppify tools: `register`, `start_session_from_photos`, `apply_session_patch`, `update_slides`, `generate_image`, `confirm`, `get_result`, `publish_post` (post now / schedule to connected channels, linked accounts), `portfolio` (list / switch), etc. |
+| **`/poppify:make-reel`** slash command | Guided session flow — photo-led or topic-led entry, free customization loop, paid confirm. |
 | **`/poppify:troubleshoot`** slash command | Symptom triage when a render came out wrong. |
 | **`/poppify:verify-render`** slash command | Optional (shell + ffmpeg): download + ffprobe + frame-extract verdict on a finished MP4. |
 | **`poppify-build-reel`** skill | The canonical photo-led / topic-led flow — when to use which tool, where the free vs paid boundaries are. |
@@ -41,7 +41,7 @@ That's it. After install:
 ## What does it cost?
 
 - **MCP install**: free
-- **All non-generation tools** (search library, customize, attach audio, update slides, register, get balance, get topup URL): **free**
+- **All non-generation tools** (search library, apply session patches, attach audio, update slides, register, wallet balance / top-up / link, portfolio list/switch, publish + schedule): **free**
 - **`confirm` render**: 1 seed base
 - **`generate_image`** (Gemini): 5 seeds per image
 - **`generate_music`** (ElevenLabs Music): 5 seeds per track
@@ -54,8 +54,8 @@ Seeds are sold at $5.99 for 100 seeds (standard pack) or $0.50 for 5 seeds (mini
 
 The reel pipeline is the headline, but every generation primitive is callable on its own — handy for ad-hoc creative tasks, not just full reels:
 
-- **`generate_image`** — Gemini Imagen, 5 seeds. Workshop the prompt for free first via `suggest_image_prompt`, then generate. Returns a URL.
-- **`generate_music`** — ElevenLabs Music, 5 seeds. Workshop via `suggest_music_prompt` (free), then generate. Returns a URL.
+- **`generate_image`** — Gemini Imagen, 5 seeds. Workshop the prompt for free first via `suggest_prompt({kind:"image"})`, then generate. Returns a URL.
+- **`generate_music`** — ElevenLabs Music, 5 seeds. Workshop via `suggest_prompt({kind:"music"})` (free), then generate. Returns a URL.
 - **`generate_voiceover`** — ElevenLabs Voice, 5 seeds per batch. Browse the curated voice catalog (free) via `list_voices`, then generate from a script.
 - **`search_visual_library`** / **`get_music_library`** — search the existing royalty-free library before generating. FREE. Matches at score ≥ 40 generally beat fresh AI generation.
 
