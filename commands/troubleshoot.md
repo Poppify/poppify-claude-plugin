@@ -22,6 +22,6 @@ Invoke the `poppify-troubleshoot` skill and walk the user through:
 
 3. **Verify the fix** — if your client has a shell with ffmpeg, `/poppify:verify-render` gives a deep check; otherwise just re-`get_result` and confirm the reported symptom is gone (e.g. audio now attached, text finalized). Verification is optional, not a gate.
 
-4. **If the symptom doesn't match any category**, file via `submit_feedback({ apiKey, sessionId, kind: "bug", description: ... })`.
+4. **If the symptom doesn't match any category**, file via `submit_feedback({ apiKey, sessionId, frictionPoints: ["<the symptom + what you tried>"] })` — there is no `kind`/`description` field; bugs go in `frictionPoints`.
 
 Do NOT re-flag issues already listed in the MCP server's "Recently addressed" block — they're known-resolved.

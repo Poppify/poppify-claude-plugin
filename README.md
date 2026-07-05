@@ -19,15 +19,12 @@
 | **`/poppify:troubleshoot`** slash command | Symptom triage when a render came out wrong. |
 | **`/poppify:verify-render`** slash command | Optional (shell + ffmpeg): download + ffprobe + frame-extract verdict on a finished MP4. |
 | **`poppify-build-reel`** skill | The canonical photo-led / topic-led flow — when to use which tool, where the free vs paid boundaries are. |
-<<<<<<< HEAD
 | **`poppify-text-card`** skill | Render a pixel-perfect text card (terminal frame, code, stat callout, headline) locally via HTML/CSS + a headless browser, cross-platform. Shell-capable clients only; shell-less clients let the composer draw the caption. |
-| **`poppify-render-debug`** skill | Optional (shell + ffmpeg): download the finished MP4, run ffprobe, extract frames, surface a verdict. |
-=======
 | **`poppify-live-motion`** skill | Veo live-motion prompting playbook — plain subject animation AND first/last-frame transitions (composition-locked end frames, journey overridePrompt, failure modes). |
-| **`poppify-render-debug`** skill | Download the finished MP4, run ffprobe, extract frames, surface a verdict. |
->>>>>>> origin/main
+| **`poppify-render-debug`** skill | Optional (shell + ffmpeg): download the finished MP4, run ffprobe, extract frames, surface a verdict. |
 | **`poppify-troubleshoot`** skill | Decision tree: symptom → root cause → action for missing audio, wrong colors, dropped captions, stuck renders. |
 | **`poppify-schema-introspect`** skill | How to verify the deployed MCP schema when a parameter looks silently dropped. |
+| **`poppify-schedule-optimizer`** skill | Engagement-optimized publishing — `recommendedSlots` (real engagement history vs platform norms), `scheduledAt:"best"`, slot assessment, multi-post spacing. |
 
 ## Install
 
@@ -40,7 +37,7 @@ In Claude Code:
 
 That's it. After install:
 
-1. `register({ source: "claude" })` mints a wallet and returns an `apiKey` + a `signupBonusUrl` (50 free seeds — claim it before paying).
+1. `register()` (optionally `{ label: "claude" }`) mints a wallet and returns an `apiKey` + a `signupBonusUrl` (50 free seeds — claim it before paying).
 2. Use the `poppify-build-reel` skill (Claude will auto-invoke when you ask it to "make a reel") to drive the rest.
 
 ## What does it cost?

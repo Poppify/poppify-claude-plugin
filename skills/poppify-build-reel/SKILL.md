@@ -14,7 +14,7 @@ Poppify is FREE for everything except `confirm` (1 seed base render) and the `ge
 If the user hasn't registered yet:
 
 ```
-register({ source: "claude" })
+register()                       // optional: { label: "claude" } for provenance
 ```
 
 Returns `apiKey` and `signupBonusUrl`. **Surface the signupBonusUrl** — opening it and signing in with Google grants 50 free seeds (≈ one fully-loaded reel WITH AI image + AI music + AI voiceover). Don't ask the user to pay before they've claimed this.
@@ -92,7 +92,7 @@ If you'd rather iterate one knob at a time, the per-action tools all work:
 - `apply_session_patch({visualEdits:[...]})` — insert/splice slides (`set_image` is the way to set a beat's image)
 
 **Search the library FIRST** before generating:
-- `search_visual_library({ apiKey, query, limit })` for images — score ≥ 40 should beat AI gen
+- `search_visual_library({ apiKey, keywords, limit })` for images (keywords = string or array: subject + mood + scene) — score ≥ 40 should beat AI gen
 - `get_music_library({ apiKey, mood, genre })` for music
 
 ## Step 4 — Generate AI assets only when needed
@@ -100,14 +100,15 @@ If you'd rather iterate one knob at a time, the per-action tools all work:
 These cost 5 seeds each. Always workshop the prompt for free first:
 
 ```
-suggest_prompt({ apiKey, kind: "image", slideContext })  // FREE prompt refinement
-generate_image({ apiKey, prompt, style })        // 5 seeds, returns image URL
+suggest_prompt({ apiKey, kind: "image", sessionId, slideIndex })  // FREE — pass sessionId+slideIndex
+                                                 //   for the slide's composer plan (or subjectDescription when no session)
+generate_image({ apiKey, prompt, visualStyle })  // 5 seeds, returns image URL
 // Then attach via update_slides({action:"set_image", slideIndex, imageUrl})
 //   — or apply_session_patch({slides:[{index, imageUrl}, ...]}) for several beats.
 //   For a single-image reel, set_image the SAME URL on every slide.
 
-suggest_prompt({ apiKey, kind: "music", mood, genre })   // FREE prompt refinement
-generate_music({ apiKey, prompt, durationSeconds }) // 5 seeds, returns URL (max 30s)
+suggest_prompt({ apiKey, kind: "music", userInput })     // FREE — userInput = natural-language music description
+generate_music({ apiKey, prompt, durationSeconds }) // 5 seeds, returns URL (default 30s, max 300s)
 // Then attach via apply_session_patch({audio:{source:"user_url", url}})
 
 list_voices({ apiKey })                          // FREE voice catalog

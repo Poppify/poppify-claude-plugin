@@ -7,7 +7,7 @@ The user wants to create a Poppify reel. Args provided: $ARGUMENTS
 
 Invoke the `poppify-build-reel` skill and follow its flow:
 
-1. If the user has no `apiKey` yet, call `register({ source: "claude" })` first. Surface the `signupBonusUrl` so they can claim 50 free seeds before paying.
+1. If the user has no `apiKey` yet, call `register()` first (optionally `{ label: "claude" }` — there is no `source` param). Surface the `signupBonusUrl` so they can claim 50 free seeds before paying.
 
 2. Pick the entry based on what the user provided:
    - Photos (data URLs or http URLs) → `start_session_from_photos({ apiKey, photos, goal, audience?, platform? })`

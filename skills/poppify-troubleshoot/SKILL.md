@@ -56,7 +56,7 @@ get_result({ sessionId, apiKey })
 
 If `status === "failed"`: the render error is in `session.renderError`. Confirm seeds were refunded (`wallet({action:"balance"})` should show the seeds back) — Poppify refunds on render-error automatically. If the balance is not refunded, file via `submit_feedback`.
 
-If `status === "rendering"` for > 5 minutes: the render is genuinely stuck (rare). File via `submit_feedback({ sessionId, kind: "stuck_render" })`.
+If `status === "rendering"` for > 5 minutes: the render is genuinely stuck (rare). File via `submit_feedback({ apiKey, sessionId, frictionPoints: ["render stuck in status=rendering for >5 minutes"] })`.
 
 ### "I got the video URL but it doesn't open"
 
@@ -120,10 +120,13 @@ If the symptom doesn't match any of the above, OR you've followed the action and
 ```
 submit_feedback({
   apiKey,
-  sessionId,
-  kind: "bug" | "improvement" | "confusion",
-  description: "..."
+  sessionId,                          // optional but include when you have one
+  frictionPoints: ["<the symptom + what you tried, specific>"],
+  suggestedImprovements: ["<concrete tool/doc/flow change>"],   // optional
+  notes: "..."                        // optional free-text context
 })
 ```
+
+(There is no `kind`/`description` field — describe bugs in `frictionPoints`, improvement ideas in `suggestedImprovements`.)
 
 Don't re-file known-resolved issues — check the "Recently addressed" block in the MCP server instructions before filing.

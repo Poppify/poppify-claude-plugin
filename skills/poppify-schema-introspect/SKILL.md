@@ -23,16 +23,17 @@ To inspect what was returned:
    ```
    That shows the names, but not the param shapes.
 
-2. For the param shapes, look at the deployed schema directly. The canonical source-of-truth lives at:
-   - **MCP endpoint**: `https://poppify.ai/api/mcp` (POST, JSON-RPC)
-   - **Listing JSON**: `https://poppify.ai/.well-known/mcp.json`
-
-   Fetch the well-known doc:
+2. For the param shapes, ask the deployed server directly via JSON-RPC `tools/list` at the canonical MCP endpoint (`https://poppify.ai/api/mcp`, POST — the Poppify server is stateless, no initialize handshake needed):
    ```bash
-   curl -s https://poppify.ai/.well-known/mcp.json | jq '.tools[] | select(.name=="apply_session_patch") | .inputSchema'
+   curl -s https://poppify.ai/api/mcp \
+     -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+     -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
+     | sed -n 's/^data: //p' | jq '.result.tools[] | select(.name=="apply_session_patch") | .inputSchema'
    ```
 
    This returns the live JSONSchema for `apply_session_patch` (or any tool you substitute in the `select(.name==...)`). Cross-reference the field list against the tool docs.
+
+   > Note: `https://poppify.ai/.well-known/mcp.json` is a *discovery manifest* (name, endpoint, a few tool stubs) — it does NOT carry per-tool `inputSchema`, so it cannot be used for drift checks. Only `tools/list` reflects the deployed schemas.
 
 ## Drift checklist
 
@@ -50,7 +51,7 @@ These were silent-drop bugs that have been resolved — if you see one of them m
 - `apply_session_patch.textPosition` — `top` / `center` / `bottom`
 - `apply_session_patch.continuousEffect` — boolean, opt-out of continuous motion
 
-If any of these are STILL missing from the live schema: the production build may be stale. File via `submit_feedback({ kind: "schema_drift", description: "apply_session_patch.textColor missing from deployed schema as of <date>" })` so the Poppify team can investigate.
+If any of these are STILL missing from the live schema: the production build may be stale. File via `submit_feedback({ apiKey, frictionPoints: ["schema drift: apply_session_patch.textColor missing from deployed schema as of <date>"] })` (there is no `kind`/`description` field — drift reports go in `frictionPoints`) so the Poppify team can investigate.
 
 ## What to do if you find drift
 
