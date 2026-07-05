@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.5hiel/poppify",
-  "description": "MCP server for photo to TikTok, Instagram Reels, YouTube Shorts, and Facebook video. Upload 1–10 photos, get a captioned 15/30/60s reel with motion, library-matched music, and optional voiceover. 27 MCP tools covering register/wallet, session creation, slide editing, audio matching, asset generation, and confirm/render. Recipe-driven composition (14 narrative frameworks), library-first audio. $0.06 base render, 50 free seeds on signup, no subscription. Built for SMBs (5–19 employees) and solo service providers.",
+  "description": "MCP server for photo to TikTok, Instagram Reels, YouTube Shorts, and Facebook video. Upload 1–10 photos, get a captioned vertical reel (typically 10–45s, text-length-driven pacing) with motion, library-matched music, and optional voiceover. 28 MCP tools covering register/wallet, session creation, slide editing, audio matching, asset generation, live motion, confirm/render, and publish/schedule to connected channels. Recipe-driven composition (14 narrative frameworks), library-first audio. $0.06 base render, 50 free seeds on signup, no subscription. Built for SMBs (5–19 employees) and solo service providers.",
   "repository": {
     "url": "https://github.com/Poppify/poppify-claude-plugin",
     "source": "github"

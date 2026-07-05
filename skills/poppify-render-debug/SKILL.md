@@ -5,7 +5,7 @@ description: Verify a rendered Poppify reel by downloading the MP4, running ffpr
 
 # Verifying a Poppify render
 
-Once `get_result({ sessionId, apiKey })` returns `status: "complete"` with a `videoUrl`, run this verification BEFORE handing the URL to the user. The signed GCS URL is short-lived (~23h), so verify and inform in one shot.
+Once `get_result({ sessionId, apiKey })` returns `status: "complete"` with a `videoUrl`, run this verification BEFORE handing the URL to the user. The signed GCS URL is valid ~7 days (`videoUrlExpiresAtIso` has the exact expiry), so verify, then hand it over with the expiry note.
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ Check these fields against expectations:
 |---|---|---|
 | Has video? | `streams[].codec_type === "video"` | h264, 720x1280, ~24fps |
 | Has audio? | `streams[].codec_type === "audio"` | aac, sample_rate 44100 or 48000 |
-| Duration | `format.duration` | matches session.duration (`15s` / `30s` / `60s`) within ±0.5s |
+| Duration | `format.duration` | matches the sum of per-slide durations from `get_slide_plan` / `get_result` (text-length-driven; media floors play in full) within ±1s |
 | Resolution | `streams[0].width` x `streams[0].height` | 720x1280 (vertical) |
 
 If audio stream is missing: the session's `selectedAudio` likely had an empty `resolvedUrl`. Check `get_result`'s response for the session's audio attach state.
@@ -55,7 +55,7 @@ Read each frame with the Read tool (it accepts PNG paths) and verify visually:
 
 - **Caption present?** Text should appear on most slides (recipe controls which beats get captions). Empty caption on a slide is a deliberate `set_text({newText:""})` patch — not a bug.
 - **Caption color matches request?** If user asked for `textColor: "#FFFFFF"` and you see another color, the schema-drop bug returned — file via `submit_feedback`.
-- **Caption position matches `textAnimation`?** typewriter → top-center, bold_captions → middle, phrase_reveal → bottom-left.
+- **Caption position matches `textAnimation`?** typewriter → upper third (~33% height), bold_captions → middle, phrase_reveal → lower third (block bottom ~84%).
 - **Image content matches slides[i] intent?** If a slide's `voiceoverShort` says "before" but the image is the "after" frame, the visual edits queue may have applied in wrong order.
 
 ## Step 4 — Produce a verdict for the user
@@ -67,13 +67,13 @@ Output a small Markdown table:
 |---|---|
 | Video stream | ✅ h264 720x1280 @ 24fps |
 | Audio stream | ✅ aac 44.1kHz, 30.0s |
-| Duration | ✅ matches session.duration=30s |
+| Duration | ✅ 30.2s, matches per-slide sum (29.8s) |
 | Caption color | ✅ matches request (#FFFFFF) |
-| Caption position | ✅ bottom-left (phrase_reveal) |
+| Caption position | ✅ lower third (phrase_reveal) |
 | All slides have captions | ⚠️ slide 3 has no caption (intentional? check session.slides[3].voiceoverShort) |
 ```
 
-If everything is green, hand the URL to the user with a note that it expires in ~23h. If anything is red, surface the specific failure and offer to re-render with a corrected patch.
+If everything is green, hand the URL to the user with a note that it expires in ~7 days (save it before then). If anything is red, surface the specific failure and offer to re-render with a corrected patch.
 
 ## Common failure patterns
 

@@ -16,7 +16,7 @@ Invoke the `poppify-render-debug` skill and follow it:
 3. Run `ffprobe -v error -print_format json -show_streams -show_format` and check:
    - Video stream present (h264, 720x1280, ~24fps)
    - Audio stream present (aac)
-   - Duration matches session.duration (±0.5s)
+   - Duration matches the sum of per-slide durations (text-length-driven; voiceover/live clips play in full) within ±1s
 
 4. Extract sample frames at 1fps and visually verify:
    - Caption text appears on intended slides

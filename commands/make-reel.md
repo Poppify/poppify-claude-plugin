@@ -20,7 +20,7 @@ Invoke the `poppify-build-reel` skill and follow its flow:
      slides: [{index: 0, text: "..."}, ...],
      textColor: "#FFFFFF",         // or any hex
      textAnimation: "phrase_reveal",
-     videoEffect: "ken_burns",
+     videoEffect: "push_in",      // canonical vocabulary: push_in, pull_out, lateral_pan, vertical_pan, focus_pull, epic_parallax, static
      audioMood: "uplifting",
      audio: { source: "library", assetId: "..." }
    })

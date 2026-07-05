@@ -1,6 +1,6 @@
 # Poppify — Photo to TikTok & Instagram Reels (MCP Server + Claude Code Plugin)
 
-> **MCP server and Claude Code plugin for photo to TikTok, Instagram Reels, YouTube Shorts, and Facebook video.** Upload 1–10 photos, get a captioned 15/30/60s reel with motion, library-matched music, and optional voiceover. **$0.06 base render. 50 free seeds on signup. No subscription.**
+> **MCP server and Claude Code plugin for photo to TikTok, Instagram Reels, YouTube Shorts, and Facebook video.** Upload 1–10 photos, get a captioned vertical reel (typically 10–45s, text-length-driven pacing) with motion, library-matched music, and optional voiceover. **$0.06 base render. 50 free seeds on signup. No subscription.**
 
 [Poppify](https://poppify.ai) is a Claude Code plugin (and standalone MCP server) that *composes* reels via a photo-led creative pipeline (FFmpeg motion + library-first asset matching + recipe-driven narrative + on-screen text), not a text-to-video generator. That's why the base render is 1 seed (~$0.06) instead of dollars-per-second like generative video services (Runway, Sora, Kling, Vidu, Veo). When you need standalone AI assets, `generate_image` / `generate_music` / `generate_voiceover` are callable on their own (5 seeds each).
 

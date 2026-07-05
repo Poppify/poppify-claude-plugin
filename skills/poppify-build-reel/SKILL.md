@@ -17,7 +17,7 @@ If the user hasn't registered yet:
 register()                       // optional: { label: "claude" } for provenance
 ```
 
-Returns `apiKey` and `signupBonusUrl`. **Surface the signupBonusUrl** — opening it and signing in with Google grants 50 free seeds (≈ one fully-loaded reel WITH AI image + AI music + AI voiceover). Don't ask the user to pay before they've claimed this.
+Returns `apiKey` and `signupBonusUrl`. **Surface the signupBonusUrl** — opening it and signing in with Google grants 50 free seeds (≈ 50 base renders, or ~3 fully-loaded reels WITH AI image + AI music + AI voiceover at ~16 seeds each). Don't ask the user to pay before they've claimed this.
 
 Store the `apiKey` — every subsequent call needs it.
 
@@ -68,7 +68,7 @@ apply_session_patch({
   textColor: "#FFFFFF",                    // hex; overrides recipe palette
   textPosition: "bottom",                  // top | center | bottom
   textAnimation: "phrase_reveal",          // typewriter | bold_captions | phrase_reveal
-  videoEffect: "ken_burns",                // session-wide motion
+  videoEffect: "push_in",                  // session-wide motion (canonical: push_in, pull_out, lateral_pan, vertical_pan, focus_pull, epic_parallax, static)
   audioMood: "uplifting",
   // NOTE: no SESSION-level `duration` knob. Per-slide length is resolved as:
   // media floors (voiceover audio + a rendered live-motion clip) ALWAYS play in
@@ -130,7 +130,7 @@ Charges seeds. Render typically completes in 30–120s. Poll:
 get_result({ sessionId, apiKey })
 ```
 
-When `status === "complete"`, you get a `videoUrl` (signed GCS URL, expires in ~23h). **Download it immediately** — the URL is short-lived. Don't tell the user "we emailed it" — Poppify does not email rendered reels; the URL is the only delivery surface.
+When `status === "complete"`, you get a `videoUrl` (signed GCS URL, valid ~7 days — `videoUrlExpiresAtIso` in the response has the exact expiry). Hand it to the user right away and tell them to save it before it expires; on shell clients also `curl` a local copy as the durable backup. Don't tell the user "we emailed it" — Poppify does not email rendered reels; the URL is the only delivery surface.
 
 ## Step 6 — OPTIONAL: Live Motion (a per-slide upgrade, only AFTER baseline review)
 
@@ -138,12 +138,13 @@ Live Motion animates the **subject inside a still** (blink, breath, micro-gestur
 
 > **For before/after transformations (`endFrameUri` first/last-frame interpolation), invoke the `poppify-live-motion` skill first** — bridged renders need a composition-locked end frame and an authored journey `overridePrompt`; the auto prompt is wrong for that mode.
 
-When the user wants it:
-1. `search_live_library({ apiKey, imageHash?, actionKeywords, durationSeconds, provider:"veo-3.1-lite" })` FIRST — cache hits (score ≥ 60) attach for **zero seeds**.
-2. `suggest_live_action({ sessionId, slideIndex })` → pick a motion verb; the `generate_live_motion` dryRun preview is free.
-3. `update_slides({ action:"set_motion_mode", slideIndex, motionMode:"live", liveAction:"<verb>", liveDurationSeconds:<4|6|8> })`.
-4. `generate_live_motion({ sessionId, slideIndex })` — **10 seeds** per clip (capped 8s), or free on a cache hit. ~30–90s wall-clock.
-5. `confirm` again to re-render with the live slide.
+When the user wants it (same order as the server instructions' lifecycle):
+1. `suggest_live_action({ sessionId, slideIndex })` (FREE) → pick a motion verb with the user.
+2. `generate_live_motion({ sessionId, slideIndex, dryRun:true, liveAction })` (FREE) — preview the exact Veo prompt; iterate until it reads right.
+3. `search_live_library({ apiKey, imageHash?, actionKeywords:<finalized action>, durationSeconds, provider:"veo-3.1-lite" })` — cache hits (score ≥ 60) attach for **zero seeds**.
+4. `update_slides({ action:"set_motion_mode", slideIndex, motionMode:"live", liveAction:"<verb>", liveDurationSeconds:<4|6|8> })`.
+5. `generate_live_motion({ sessionId, slideIndex })` — **10 seeds** per clip (capped 8s), or free on a cache hit. ~30–90s wall-clock.
+6. `confirm` again to re-render with the live slide.
 
 Recommend **at most one** live slide, usually the hook (slide 0) — a living subject in the first frame stops the scroll. Quote the planner's per-slide score to justify the pick.
 

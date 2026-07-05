@@ -40,10 +40,10 @@ If `resolvedUrl` is populated but audio still missing in the MP4: open `poppify-
 
 **Most likely**: the agent set `textAnimation` and `textPosition` to conflicting values (typewriter wants top, you forced bottom). The renderer respects the explicit `textPosition`, but the animation style may render awkwardly at the forced position.
 
-**Action**: pick the right animation for the position:
-- top-center text → `textAnimation: "typewriter"`
-- middle text → `textAnimation: "bold_captions"`
-- bottom-left text → `textAnimation: "phrase_reveal"`
+**Action**: pick the right animation for the position (renderer anchors):
+- upper-third text (centered ~33% height) → `textAnimation: "typewriter"`
+- middle text (vertically centered) → `textAnimation: "bold_captions"`
+- lower-third text (block bottom ~84%) → `textAnimation: "phrase_reveal"`
 
 Don't override `textPosition` unless you know why. The default position comes from the animation style and usually looks best.
 
@@ -60,14 +60,14 @@ If `status === "rendering"` for > 5 minutes: the render is genuinely stuck (rare
 
 ### "I got the video URL but it doesn't open"
 
-**Most likely**: the signed GCS URL expired. Default TTL is ~23h.
+**Most likely**: the signed GCS URL expired. TTL is ~7 days (`get_result` returns `videoUrlExpiresAtIso` with the exact time).
 
 **Action**:
 ```
 get_result({ sessionId, apiKey })
 ```
 
-If `videoUrl` returned but the URL doesn't open: the URL has expired and Poppify doesn't persist videos beyond the TTL (cost-control). Re-`confirm` charges seeds again. Tell the user to download immediately next time.
+If `videoUrl` returned but the URL doesn't open: the URL has expired and Poppify doesn't persist videos beyond the ~7-day TTL (cost-control). Re-`confirm` charges seeds again. Tell the user to save the file within the window next time (shell clients: `curl` a local copy right after render).
 
 ### "Video duration is wrong"
 

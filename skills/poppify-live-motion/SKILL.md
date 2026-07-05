@@ -71,7 +71,7 @@ Describe the JOURNEY between the frames — the frames already carry the endpoin
 ## 6. Duration, cost, cache
 
 - Veo buckets: **4 / 6 / 8s** for plain i2v. **Bridged renders: 8s ONLY** — Veo 3.1 Lite rejects `lastFrame` at 4/6 (400). Explicit `liveDurationSeconds` always wins over the rounded default.
-- **10 seeds/clip** (~$0.40); failures auto-refund. Cache hits via `search_live_library` are free.
+- **10 seeds/clip** (~$0.60 at the standard-pack rate); failures auto-refund. Cache hits via `search_live_library` are free.
 - Bridged renders cache separately from plain animations of the same start image, and **override prompts get their own cache slot** — iterating on the overridePrompt never collides with earlier renders. `forceRender: true` for a deliberate re-roll.
 
 For the wider reel flow (baseline first, upsell rules, layered camera), see `poppify-build-reel`. For verifying the finished clip/reel, see `poppify-render-debug`.
