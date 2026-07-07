@@ -32,7 +32,7 @@ The auto prompt (5-part: cinematography + subject + action + context + style) wo
 The full recipe, in order:
 
 1. **Start image** on the slide (photo or `generate_image`).
-2. **End frame via `generate_image`** with `referenceAssetId` / `referenceImageUrl` (consistent-frames mode, same cost) — MUST be composition-locked. Prompt template:
+2. **End frame via `generate_image`** with `referenceAssetId` / `referenceImageUrl` (consistent-frames mode, same cost) — MUST be composition-locked. **Pass `sessionId`** so the end frame is generated at the session's aspect ratio: the start image, the end frame, and the reel must all be the SAME orientation (vertical by default), or the bridge crops/letterboxes and the interpolation drifts. Prompt template:
    > "Same camera position, same framing, same background/setting. Only *\<the delta\>* changes. Subject *\<geometric consequence of the action — e.g. two steps lower, closer to camera, larger in frame\>*."
 3. **`update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction, endFrameUri, liveDurationSeconds: 8})`** — pass 8 explicitly: the current provider (Veo 3.1 Lite) REJECTS `lastFrame` at 4s/6s with `400 INVALID_ARGUMENT ("use case not supported")`; 8 is the only working bucket for bridged renders.
 4. **`generate_live_motion({dryRun:true, ...})`** (free preview) — reference only in this mode. The auto prompt is single-frame style (camera move + slow-motion suffix); do NOT ship it for a bridged render.

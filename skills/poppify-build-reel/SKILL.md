@@ -31,7 +31,8 @@ start_session_from_photos({
   goal: "educate" | "sell" | "connect" | "prove" | "entertain",
   audience: "...",          // optional but biases narrative meaningfully
   theme: "...",             // optional free-text intent
-  platform: "instagram" | "tiktok" | "youtube_shorts" | "facebook"
+  platform: "instagram" | "tiktok" | "youtube_shorts" | "facebook",
+  aspectRatio: "9:16" | "16:9"   // OPTIONAL — defaults to 9:16 (vertical). See below.
 })
 ```
 
@@ -39,8 +40,15 @@ Returns: slides[] (each with `voiceoverShort` text), caption, hashtags, callToAc
 
 **Topic-led** (no photos, brand or topic input):
 ```
-start_session({ apiKey, topic, audience, goal, platform })
+start_session({ apiKey, topic, audience, goal, platform, aspectRatio })
 ```
+
+**Aspect ratio is a SESSION property — set it ONCE here.** It defaults to `9:16`
+(vertical) and everything downstream inherits it: `generate_image` / `generate_frames`
+stills, live-motion clips, library search/match, and the render canvas. Only pass
+`aspectRatio: "16:9"` when the user explicitly wants a **landscape** video (e.g. a
+regular 16:9 YouTube upload — NOT a Short). Don't mix orientations: a 16:9 still in a
+9:16 session (or vice versa) gets cropped/letterboxed, and `generate_image` will warn.
 
 Returns 5 concept options. Pick one with `refine_concept`. **A topic-led session starts with NO images** — every slide's `imageUrl` is empty. You MUST give at least one slide an image (Step 4) before `confirm`, or it refunds with `topic_led_no_images`. The `recipeDistribution` field shows which recipes the 5 concepts span; if they collapsed off-brief (e.g. you wanted a tribute/hype angle but got all confessional), call `start_session` again with an explicit `recipe` parameter (`recipes()` for IDs).
 
@@ -102,7 +110,10 @@ These cost 5 seeds each. Always workshop the prompt for free first:
 ```
 suggest_prompt({ apiKey, kind: "image", sessionId, slideIndex })  // FREE — pass sessionId+slideIndex
                                                  //   for the slide's composer plan (or subjectDescription when no session)
-generate_image({ apiKey, prompt, visualStyle })  // 5 seeds, returns image URL
+generate_image({ apiKey, prompt, visualStyle, sessionId })  // 5 seeds, returns image URL
+//   Pass sessionId so the still inherits the session's aspect ratio (vertical by
+//   default). The render canvas is fixed to the session aspect, so a still that
+//   doesn't match it is cropped — passing sessionId keeps them aligned.
 // Then attach via update_slides({action:"set_image", slideIndex, imageUrl})
 //   — or apply_session_patch({slides:[{index, imageUrl}, ...]}) for several beats.
 //   For a single-image reel, set_image the SAME URL on every slide.
