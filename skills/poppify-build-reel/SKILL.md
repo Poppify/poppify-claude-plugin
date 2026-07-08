@@ -7,6 +7,8 @@ description: Canonical photo-led / topic-led flow for the Poppify MCP. Use whene
 
 Poppify is FREE for everything except `confirm` (1 seed base render) and the `generate_*` tools (5 seeds each for AI image / music / voiceover; `animate_slide` is 10 seeds per clip). You can iterate the configuration **infinitely** before render and not spend anything.
 
+> **Tier awareness — check what's doable first.** Not every Poppify connector exposes AI generation. Before using `add_slide_image`, `animate_slide`, `add_soundtrack`, `add_narration`, or `set_narration_voice`, confirm they exist — call `get_capabilities` (it reports only what *this* tier can do) or check the tool list. If they're absent (the **composer tier**), build entirely from the user's own photos + `search_visual_library` / `search_live_library` / `get_music_library`; never assume a generator exists.
+
 > **Think in SLIDES, not a photo pool.** Every beat owns its image at `slides[i].imageUrl`. Attach or swap a beat's visual with `update_slides({action:"set_image", slideIndex, imageUrl})`, or set several at once via `apply_session_patch({slides:[{index, imageUrl}]})`. For insert/splice edits to the slide sequence, use `apply_session_patch({visualEdits:[...]})` — `set_image` is the way to set or swap an existing beat's image.
 
 ## Step 1 — Mint a wallet (one-time, free)
