@@ -83,7 +83,7 @@ If `videoUrl` returned but the URL doesn't open: the URL has expired and Poppify
 
 ### "The image in slide N looks wrong / has text baked in"
 
-**Most likely**: `generate_image` was called for a text-heavy concept and Gemini Imagen garbled the literal text into the image, AND composer drew drawtext on top — so the slide has double text.
+**Most likely**: `add_slide_image` was called for a text-heavy concept and Gemini Imagen garbled the literal text into the image, AND composer drew drawtext on top — so the slide has double text.
 
 **Action**:
 - For text-heavy slides (terminal frames, install commands, stat callouts, end cards): render text-on-bg locally via HTML/CSS screencap + `upload_asset`, then attach via `update_slides({action:"set_image", slideIndex, imageUrl:accessUrl})` + `update_slides({action:"set_text", slideIndex, newText:""})` (so composer doesn't add text on top). (`set_image` is the way to attach a slide's image; insert/splice pool edits go through `apply_session_patch({visualEdits:[...]})`.)
@@ -93,7 +93,7 @@ If `videoUrl` returned but the URL doesn't open: the URL has expired and Poppify
 
 **Action**: refine the query. Library scoring weights **Visual Hint Match (tag/keyword)** at 50/100 points — generic queries score low. Use specific keywords from the slide's `voiceoverShort` or concept hook.
 
-If still nothing > score 40: fall through to `generate_image` (5 seeds). Workshop the prompt with `suggest_prompt({kind:"image"})` for free before generating.
+If still nothing > score 40: fall through to `add_slide_image` (5 seeds). Workshop the prompt with `suggest_prompt({kind:"image"})` for free before generating.
 
 ### "Single-image reel has jerky / resetting motion at each cut"
 
@@ -109,9 +109,9 @@ If still nothing > score 40: fall through to `generate_image` (5 seeds). Worksho
 
 ### "Live motion didn't apply / subject isn't moving"
 
-**Most likely**: `generate_live_motion` was never called, or the slide's `motionMode` wasn't set to `live` first. Live motion is a deliberate 2-step upgrade, not a default.
+**Most likely**: `animate_slide` was never called, or the slide's `motionMode` wasn't set to `live` first. Live motion is a deliberate 2-step upgrade, not a default.
 
-**Action**: `update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction:"<verb>"})` THEN `generate_live_motion({sessionId, slideIndex})` (10 seeds, or free on a `search_live_library` cache hit ≥ 60). Confirm the cinematic baseline was rendered and reviewed first — live motion is offered only after that.
+**Action**: `update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction:"<verb>"})` THEN `animate_slide({sessionId, slideIndex})` (10 seeds, or free on a `search_live_library` cache hit ≥ 60). Confirm the cinematic baseline was rendered and reviewed first — live motion is offered only after that.
 
 ## When to file feedback
 

@@ -5,7 +5,7 @@ description: Canonical photo-led / topic-led flow for the Poppify MCP. Use whene
 
 # Building a Poppify reel — the canonical flow
 
-Poppify is FREE for everything except `confirm` (1 seed base render) and the `generate_*` tools (5 seeds each for AI image / music / voiceover; `generate_live_motion` is 10 seeds per clip). You can iterate the configuration **infinitely** before render and not spend anything.
+Poppify is FREE for everything except `confirm` (1 seed base render) and the `generate_*` tools (5 seeds each for AI image / music / voiceover; `animate_slide` is 10 seeds per clip). You can iterate the configuration **infinitely** before render and not spend anything.
 
 > **Think in SLIDES, not a photo pool.** Every beat owns its image at `slides[i].imageUrl`. Attach or swap a beat's visual with `update_slides({action:"set_image", slideIndex, imageUrl})`, or set several at once via `apply_session_patch({slides:[{index, imageUrl}]})`. For insert/splice edits to the slide sequence, use `apply_session_patch({visualEdits:[...]})` — `set_image` is the way to set or swap an existing beat's image.
 
@@ -40,23 +40,23 @@ Returns: slides[] (each with `voiceoverShort` text), caption, hashtags, callToAc
 
 **Topic-led** (no photos, brand or topic input):
 ```
-start_session({ apiKey, topic, audience, goal, platform, aspectRatio })
+start_session_from_topic({ apiKey, topic, audience, goal, platform, aspectRatio })
 ```
 
 **Aspect ratio is a SESSION property — set it ONCE here.** It defaults to `9:16`
-(vertical) and everything downstream inherits it: `generate_image` / `generate_frames`
+(vertical) and everything downstream inherits it: `add_slide_image` / `generate_frames`
 stills, live-motion clips, library search/match, and the render canvas. Only pass
 `aspectRatio: "16:9"` when the user explicitly wants a **landscape** video (e.g. a
 regular 16:9 YouTube upload — NOT a Short). Don't mix orientations: a 16:9 still in a
-9:16 session (or vice versa) gets cropped/letterboxed, and `generate_image` will warn.
+9:16 session (or vice versa) gets cropped/letterboxed, and `add_slide_image` will warn.
 
-Returns 5 concept options. Pick one with `refine_concept`. **A topic-led session starts with NO images** — every slide's `imageUrl` is empty. You MUST give at least one slide an image (Step 4) before `confirm`, or it refunds with `topic_led_no_images`. The `recipeDistribution` field shows which recipes the 5 concepts span; if they collapsed off-brief (e.g. you wanted a tribute/hype angle but got all confessional), call `start_session` again with an explicit `recipe` parameter (`recipes()` for IDs).
+Returns 5 concept options. Pick one with `refine_concept`. **A topic-led session starts with NO images** — every slide's `imageUrl` is empty. You MUST give at least one slide an image (Step 4) before `confirm`, or it refunds with `topic_led_no_images`. The `recipeDistribution` field shows which recipes the 5 concepts span; if they collapsed off-brief (e.g. you wanted a tribute/hype angle but got all confessional), call `start_session_from_topic` again with an explicit `recipe` parameter (`recipes()` for IDs).
 
 ### Decide FIRST: one image, or one per beat?
 
 Before generating anything, ask whether **one image can carry the whole reel**. For a single-subject / hero / cinematic reel (recipe `visualType: "hero_image"`), it usually can — the camera motion and the changing captions ARE the variety; the image stays the star. Generating four images for four beats is the wrong default — it costs 4× the seeds AND drifts the subject's identity across slides.
 
-- **One image across all beats** (recommended for single-subject reels): `generate_image` once, then `set_image` the SAME URL on every slide. Keep ONE `videoEffect` + `continuousEffect` on so the camera makes one continuous move (see Gotchas). 5 seeds total for imagery.
+- **One image across all beats** (recommended for single-subject reels): `add_slide_image` once, then `set_image` the SAME URL on every slide. Keep ONE `videoEffect` + `continuousEffect` on so the camera makes one continuous move (see Gotchas). 5 seeds total for imagery.
 - **One image per beat** (only when beats are genuinely distinct scenes — before/after, multi-step, comparison): generate/search per slide. N × 5 seeds.
 
 ## Step 3 — Refine (FREE, unlimited iteration)
@@ -110,7 +110,7 @@ These cost 5 seeds each. Always workshop the prompt for free first:
 ```
 suggest_prompt({ apiKey, kind: "image", sessionId, slideIndex })  // FREE — pass sessionId+slideIndex
                                                  //   for the slide's composer plan (or subjectDescription when no session)
-generate_image({ apiKey, prompt, visualStyle, sessionId })  // 5 seeds, returns image URL
+add_slide_image({ apiKey, prompt, visualStyle, sessionId })  // 5 seeds, returns image URL
 //   Pass sessionId so the still inherits the session's aspect ratio (vertical by
 //   default). The render canvas is fixed to the session aspect, so a still that
 //   doesn't match it is cropped — passing sessionId keeps them aligned.
@@ -119,11 +119,11 @@ generate_image({ apiKey, prompt, visualStyle, sessionId })  // 5 seeds, returns 
 //   For a single-image reel, set_image the SAME URL on every slide.
 
 suggest_prompt({ apiKey, kind: "music", userInput })     // FREE — userInput = natural-language music description
-generate_music({ apiKey, prompt, durationSeconds }) // 5 seeds, returns URL (default 30s, max 300s)
+add_soundtrack({ apiKey, prompt, durationSeconds }) // 5 seeds, returns URL (default 30s, max 300s)
 // Then attach via apply_session_patch({audio:{source:"user_url", url}})
 
 list_voices({ apiKey })                          // FREE voice catalog
-generate_voiceover({ apiKey, scripts, voiceId }) // 5 seeds per batch
+add_narration({ apiKey, scripts, voiceId }) // 5 seeds per batch
 // Then attach via apply_session_patch({voiceoverSlides})
 ```
 
@@ -151,10 +151,10 @@ Live Motion animates the **subject inside a still** (blink, breath, micro-gestur
 
 When the user wants it (same order as the server instructions' lifecycle):
 1. `suggest_live_action({ sessionId, slideIndex })` (FREE) → pick a motion verb with the user.
-2. `generate_live_motion({ sessionId, slideIndex, dryRun:true, liveAction })` (FREE) — preview the exact Veo prompt; iterate until it reads right.
+2. `animate_slide({ sessionId, slideIndex, dryRun:true, liveAction })` (FREE) — preview the exact Veo prompt; iterate until it reads right.
 3. `search_live_library({ apiKey, imageHash?, actionKeywords:<finalized action>, durationSeconds, provider:"veo-3.1-lite" })` — cache hits (score ≥ 60) attach for **zero seeds**.
 4. `update_slides({ action:"set_motion_mode", slideIndex, motionMode:"live", liveAction:"<verb>", liveDurationSeconds:<4|6|8> })`.
-5. `generate_live_motion({ sessionId, slideIndex })` — **10 seeds** per clip (capped 8s), or free on a cache hit. ~30–90s wall-clock.
+5. `animate_slide({ sessionId, slideIndex })` — **10 seeds** per clip (capped 8s), or free on a cache hit. ~30–90s wall-clock.
 6. `confirm` again to re-render with the live slide.
 
 Recommend **at most one** live slide, usually the hook (slide 0) — a living subject in the first frame stops the scroll. Quote the planner's per-slide score to justify the pick.
@@ -185,7 +185,7 @@ publish_post({ apiKey, postId, channelIds, scheduledAt })         // schedule (I
 - **Single-image reel → ONE continuous camera move.** When one image carries all slides, keep a SINGLE `videoEffect` and leave `continuousEffect` on (default `true`). The renderer then makes one continuous move across the whole reel via a global frame offset. **Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing** — each slide gets its own independent move and the motion visibly resets at every cut. Only use per-slide `slideEffects` when the slides have *different* images.
 - **Composer draws caption text BY DEFAULT** from `slides[i].voiceoverShort`. Empty string = skipped.
 - **Slide duration: two DRIVERS + two MEDIA FLOORS, no global control.** Media floors always play in full: (1) attached **voiceover** audio, (2) a rendered **live-motion (Veo) clip** — so an 8s morph slide holds all 8s even under a short caption (you do NOT pad the caption). Drivers: (3) **EXPLICIT** `update_slides({action:"set_duration", slideIndex, duration:N})` on ANY slide — overrides text-length, capped 2–15s, never shortens the media floor; (4) **TEXT-LENGTH** `(words/2.6)*1.2` otherwise; 4s default for a blank slide. Lengthen a slide: write MORE text OR use set_duration. `apply_session_patch({duration})` is rejected — no session-level control. **Use text** for normal captioned slides; **use set_duration** for text-baked cards or any precise hold.
-- **Voiceover auto-detaches when text changes.** The text you write IS the voiceover script. `update_slides({action:"set_text"})` on a slide with attached voiceover detaches it (old audio of wrong words). Call `generate_voiceover` ONLY after text is finalized — otherwise you waste 5 seeds per text edit.
+- **Voiceover auto-detaches when text changes.** The text you write IS the voiceover script. `update_slides({action:"set_text"})` on a slide with attached voiceover detaches it (old audio of wrong words). Call `add_narration` ONLY after text is finalized — otherwise you waste 5 seeds per text edit.
 - **Text cards (terminal screencaps, end cards)**: `set_image` an image with text already baked in, then `update_slides({action:"set_text", slideIndex, newText:""})`. Empty string suppresses composer text overlay. Hold it as long as you want with `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s) — set_duration works on any slide, so you no longer have to blank the caption first just to control the hold. Blank slide with no explicit duration falls back to 4s.
 - **Sceneboard recipes auto-lock motion across all panels** — per-slide variation is ignored when visualType is sceneboard.
 - **Library audio resolves URLs at attach time** — if `apply_session_patch({audio:{source:"library", assetId}})` errors with "asset not found", pick a different `assetId` from `get_music_library`.

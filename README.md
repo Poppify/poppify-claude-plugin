@@ -2,7 +2,7 @@
 
 > **MCP server and Claude Code plugin for photo to TikTok, Instagram Reels, YouTube Shorts, and Facebook video.** Upload 1–10 photos, get a captioned vertical reel (typically 10–45s, text-length-driven pacing) with motion, library-matched music, and optional voiceover. **$0.06 base render. 50 free seeds on signup. No subscription.**
 
-[Poppify](https://poppify.ai) is a Claude Code plugin (and standalone MCP server) that *composes* reels via a photo-led creative pipeline (FFmpeg motion + library-first asset matching + recipe-driven narrative + on-screen text), not a text-to-video generator. That's why the base render is 1 seed (~$0.06) instead of dollars-per-second like generative video services (Runway, Sora, Kling, Vidu, Veo). When you need standalone AI assets, `generate_image` / `generate_music` / `generate_voiceover` are callable on their own (5 seeds each).
+[Poppify](https://poppify.ai) is a Claude Code plugin (and standalone MCP server) that *composes* reels via a photo-led creative pipeline (FFmpeg motion + library-first asset matching + recipe-driven narrative + on-screen text), not a text-to-video generator. That's why the base render is 1 seed (~$0.06) instead of dollars-per-second like generative video services (Runway, Sora, Kling, Vidu, Veo). Its generation primitives — `add_slide_image` / `add_soundtrack` / `add_narration` — are steps *inside* that reel workflow (5 seeds each): fill a slide, add a track, narrate a slide — never a standalone generation service.
 
 **Where it fits in a Claude Code marketing stack:** Poppify is the creative slot. Pairs with [Postiz](https://github.com/gitroomhq/postiz-agent) for cross-platform scheduling and [Windsor.ai](https://github.com/windsor-ai/claude-windsor-ai-plugin) for attribution. Drop-in replacement for [Runway](https://github.com/runwayml/skills) when you have photos and want library-matched audio; use [HyperFrames](https://github.com/heygen-com/hyperframes) when you want to code video in HTML.
 
@@ -14,7 +14,7 @@
 
 | Component | Purpose |
 |---|---|
-| **MCP server** (`https://poppify.ai/mcp`, HTTP) | All Poppify tools: `register`, `start_session_from_photos`, `apply_session_patch`, `update_slides`, `generate_image`, `confirm`, `get_result`, `publish_post` (post now / schedule to connected channels, linked accounts), `portfolio` (list / switch), etc. |
+| **MCP server** (`https://poppify.ai/mcp`, HTTP) | All Poppify tools: `register`, `start_session_from_photos`, `apply_session_patch`, `update_slides`, `add_slide_image`, `confirm`, `get_result`, `publish_post` (post now / schedule to connected channels, linked accounts), `portfolio` (list / switch), etc. |
 | **`/poppify:make-reel`** slash command | Guided session flow — photo-led or topic-led entry, free customization loop, paid confirm. |
 | **`/poppify:troubleshoot`** slash command | Symptom triage when a render came out wrong. |
 | **`/poppify:verify-render`** slash command | Optional (shell + ffmpeg): download + ffprobe + frame-extract verdict on a finished MP4. |
@@ -45,21 +45,21 @@ That's it. After install:
 - **MCP install**: free
 - **All non-generation tools** (search library, apply session patches, attach audio, update slides, register, wallet balance / top-up / link, portfolio list/switch, publish + schedule): **free**
 - **`confirm` render**: 1 seed base
-- **`generate_image`** (Gemini): 5 seeds per image
-- **`generate_music`** (ElevenLabs Music): 5 seeds per track
-- **`generate_voiceover`** (ElevenLabs Voice): 5 seeds per batch
-- **`generate_live_motion`** (Veo 3.1 Lite image-to-video, OPTIONAL): 10 seeds per live clip. Animates the subject *inside* a still (blink, breath, micro-gesture) while the FFmpeg camera motion layers on top. A per-slide upgrade applied **after** you review the cinematic baseline — never by default. Cache hits via `search_live_library` are free.
+- **`add_slide_image`** (Gemini): 5 seeds per image
+- **`add_soundtrack`** (ElevenLabs Music): 5 seeds per track
+- **`add_narration`** (ElevenLabs Voice): 5 seeds per batch
+- **`animate_slide`** (Veo 3.1 Lite image-to-video, OPTIONAL): 10 seeds per live clip. Animates the subject *inside* a still (blink, breath, micro-gesture) while the FFmpeg camera motion layers on top. A per-slide upgrade applied **after** you review the cinematic baseline — never by default. Cache hits via `search_live_library` are free.
 
 Seeds are sold at $5.99 for 100 seeds (standard pack) or $0.50 for 5 seeds (mini trial pack). 50 seeds are granted free on signup.
 
-## Also useful standalone
+## Generation as a workflow step
 
-The reel pipeline is the headline, but every generation primitive is callable on its own — handy for ad-hoc creative tasks, not just full reels:
+Generation is never the destination — it fills in what the library can't, *inside* a reel session. Always search the library first (free); generate only when there's no good match:
 
-- **`generate_image`** — Gemini Imagen, 5 seeds. Workshop the prompt for free first via `suggest_prompt({kind:"image"})`, then generate. Returns a URL.
-- **`generate_music`** — ElevenLabs Music, 5 seeds. Workshop via `suggest_prompt({kind:"music"})` (free), then generate. Returns a URL.
-- **`generate_voiceover`** — ElevenLabs Voice, 5 seeds per batch. Browse the curated voice catalog (free) via `list_voices`, then generate from a script.
-- **`search_visual_library`** / **`get_music_library`** — search the existing royalty-free library before generating. FREE. Matches at score ≥ 40 generally beat fresh AI generation.
+- **`search_visual_library`** / **`get_music_library`** — search the existing royalty-free library first. FREE. Matches at score ≥ 40 generally beat fresh AI generation.
+- **`add_slide_image`** — fill a slide with a Gemini Imagen still, 5 seeds. Workshop the prompt free via `suggest_prompt({kind:"image"})` first.
+- **`add_soundtrack`** — add an ElevenLabs Music track to the reel, 5 seeds. Workshop via `suggest_prompt({kind:"music"})` (free) first.
+- **`add_narration`** — narrate slides via ElevenLabs Voice, 5 seeds per batch. Pick a voice free via `list_voices` first.
 
 Generated assets persist to your asset library, so they're reusable across future reels and discoverable on later searches.
 

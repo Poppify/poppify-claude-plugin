@@ -1,6 +1,6 @@
 ---
 name: poppify-live-motion
-description: Prompting playbook for Poppify Live Motion (Veo image-to-video) — plain subject animation AND first/last-frame transitions. Use when the user wants "live motion", "animate the subject", a "before/after transformation", a "morph", "first and last frame" / "endFrameUri" interpolation, OR when a generated Veo clip looks wrong — "smoke morph", "cross-fade", "ghost double", "two of the same person", "motion goes backwards", "subject changed identity". Covers how to write the action prompt, how to generate composition-locked end frames with generate_image (reference params, consistent-frames mode), the journey overridePrompt template for bridged renders, and a failure-modes table.
+description: Prompting playbook for Poppify Live Motion (Veo image-to-video) — plain subject animation AND first/last-frame transitions. Use when the user wants "live motion", "animate the subject", a "before/after transformation", a "morph", "first and last frame" / "endFrameUri" interpolation, OR when a generated Veo clip looks wrong — "smoke morph", "cross-fade", "ghost double", "two of the same person", "motion goes backwards", "subject changed identity". Covers how to write the action prompt, how to generate composition-locked end frames with add_slide_image (reference params, consistent-frames mode), the journey overridePrompt template for bridged renders, and a failure-modes table.
 ---
 
 # Live Motion prompting (Veo 3.1 image-to-video)
@@ -24,20 +24,20 @@ The auto prompt (5-part: cinematography + subject + action + context + style) wo
 
 - **Specific physical verbs** beat abstractions: "exhales slowly, hair drifting in the breeze" beats "looks relaxed".
 - Match intensity to framing: close-ups take micro-gestures (blink, breath); wides take real movement (walks, turns).
-- Respect the pairing check in the `generate_live_motion` dryRun preview (`pairing.ok` / `suggestedCamera`) — a warned-against camera layered on a big action produces warping.
-- Iterate with `generate_live_motion({dryRun:true, ...})` (free, no apiKey) until the assembled prompt reads shippable.
+- Respect the pairing check in the `animate_slide` dryRun preview (`pairing.ok` / `suggestedCamera`) — a warned-against camera layered on a big action produces warping.
+- Iterate with `animate_slide({dryRun:true, ...})` (free, no apiKey) until the assembled prompt reads shippable.
 
 ## 3. First/last-frame transition workflow (bridged renders)
 
 The full recipe, in order:
 
-1. **Start image** on the slide (photo or `generate_image`).
-2. **End frame via `generate_image`** with `referenceAssetId` / `referenceImageUrl` (consistent-frames mode, same cost) — MUST be composition-locked. **Pass `sessionId`** so the end frame is generated at the session's aspect ratio: the start image, the end frame, and the reel must all be the SAME orientation (vertical by default), or the bridge crops/letterboxes and the interpolation drifts. Prompt template:
+1. **Start image** on the slide (photo or `add_slide_image`).
+2. **End frame via `add_slide_image`** with `referenceAssetId` / `referenceImageUrl` (consistent-frames mode, same cost) — MUST be composition-locked. **Pass `sessionId`** so the end frame is generated at the session's aspect ratio: the start image, the end frame, and the reel must all be the SAME orientation (vertical by default), or the bridge crops/letterboxes and the interpolation drifts. Prompt template:
    > "Same camera position, same framing, same background/setting. Only *\<the delta\>* changes. Subject *\<geometric consequence of the action — e.g. two steps lower, closer to camera, larger in frame\>*."
 3. **`update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction, endFrameUri, liveDurationSeconds: 8})`** — pass 8 explicitly: the current provider (Veo 3.1 Lite) REJECTS `lastFrame` at 4s/6s with `400 INVALID_ARGUMENT ("use case not supported")`; 8 is the only working bucket for bridged renders.
-4. **`generate_live_motion({dryRun:true, ...})`** (free preview) — reference only in this mode. The auto prompt is single-frame style (camera move + slow-motion suffix); do NOT ship it for a bridged render.
+4. **`animate_slide({dryRun:true, ...})`** (free preview) — reference only in this mode. The auto prompt is single-frame style (camera move + slow-motion suffix); do NOT ship it for a bridged render.
 5. **Author the journey `overridePrompt`** (template below).
-6. **`search_live_library`** (bridged renders cache in their own slot) → **`generate_live_motion({sessionId, slideIndex, overridePrompt})`**.
+6. **`search_live_library`** (bridged renders cache in their own slot) → **`animate_slide({sessionId, slideIndex, overridePrompt})`**.
 
 ### The journey overridePrompt template
 

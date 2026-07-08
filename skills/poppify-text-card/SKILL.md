@@ -5,7 +5,7 @@ description: Render a pixel-perfect text card (terminal frame, install command, 
 
 # Poppify text card (local render — a Claude Code capability)
 
-Text-primary slides — install commands, code, terminal frames, stat callouts, exact headlines/URLs/brand names — must **never** go through `generate_image` (diffusion garbles literal text). On a shell-capable client you render them as a pixel-perfect HTML/CSS card and screenshot it. Zero seeds, ~30s per card.
+Text-primary slides — install commands, code, terminal frames, stat callouts, exact headlines/URLs/brand names — must **never** go through `add_slide_image` (diffusion garbles literal text). On a shell-capable client you render them as a pixel-perfect HTML/CSS card and screenshot it. Zero seeds, ~30s per card.
 
 ## Capability gate — check FIRST
 
@@ -91,4 +91,4 @@ rm -rf /tmp/poppify-card
 
 ## Why local, not AI
 
-Pixel-perfect literal text, zero seeds, deterministic. Any install command, code snippet, stat number, brand name, or URL that "the user must read exactly" belongs here — never in `generate_image`.
+Pixel-perfect literal text, zero seeds, deterministic. Any install command, code snippet, stat number, brand name, or URL that "the user must read exactly" belongs here — never in `add_slide_image`.
