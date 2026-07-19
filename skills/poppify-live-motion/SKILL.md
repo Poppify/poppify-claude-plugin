@@ -78,6 +78,33 @@ To stage several actions in one clip, give the `overridePrompt` an explicit seco
 **Worked example** (a line-art doodle coming to life):
 > Locked static camera, plain white background, one continuous 8-second take. 0–2s: she holds still as a flat line drawing. 2–4s: still a drawing, she drinks the coffee. 4–6s: real color bleeds in from her face and spreads outward, the drawing becoming a single real photographed woman. 6–8s: fully real, she turns and walks out of frame.
 
+### Seamless loops (there-and-back + ping-pong)
+
+"Oddly-satisfying" morphs that replay invisibly need the **last frame to equal the first**. Two strategies:
+
+**A — There-and-back (in-product, one Veo clip).** Set `endFrameUri` to the slide's **own start image** — the cleanest possible composition lock (it *is* the start frame → zero ghost/drift risk). The subject morphs away and settles back:
+
+1. `set_motion_mode({motionMode:"live", endFrameUri:<the slide's own start image URL>, liveDurationSeconds:8})`.
+2. Author a **symmetric** overridePrompt — ONE dominant transformation out, hold, reverse:
+   > Locked static camera, one continuous 8-second take. 0–3s: \<subject\> transforms via \<mechanism: sweep / ripple / spread\> into \<peak state\>. 3–5s: fully \<peak state\>, \<one small settling motion\>. 5–8s: the change reverses by the same mechanism, settling back to the exact opening frame. One smooth continuous motion, single subject, consistent identity.
+3. IG / TikTok loop the reel natively — you only need the clip's first and last frame to match.
+
+Watch-outs unique to there-and-back:
+- **The peak has NO frame anchor.** `endFrameUri` pins only the *last* frame (= start). Veo has to *invent* the midpoint peak AND return, all in 8s — so the peak is the weakest, most rushed part. Keep it a **single** transformation; never stack a second motion (a bloom, a spin) on top — it gets dropped or muddies the morph.
+- **Budget the 8s ≈ 3s out / 2s peak / 3s back** — the payoff is on screen only ~2s.
+
+**B — Ping-pong / boomerang (anchored peak, guaranteed loop).** When the peak must read crisp, render a **one-way** A→B clip with a *real, composition-locked* `endFrameUri` = the peak "after" frame (§3) — so the peak is a fully-rendered frame, not an unanchored invention — then play it **forward + reverse**:
+
+```bash
+# on the downloaded one-way live clip
+ffmpeg -i clip.mp4 -filter_complex "[0:v]reverse[r];[0:v][r]concat=n=2:v=1[v]" -map "[v]" boomerang.mp4
+```
+
+- Poppify does **not** boomerang at render today, so this is a local post-step; the result is a standalone loop mp4 you post directly (it bypasses the Poppify composite, so add caption/audio on the platform or in the ffmpeg step). Native ping-pong is an open product request.
+- Trade-off: 2× length (8s source → 16s loop) + one manual step. Worth it for product reveals and satisfying morphs where the peak must be sharp.
+
+**Rule of thumb:** subtle round-trip → **there-and-back** (one clip, fully in-product). Crisp anchored peak → **ping-pong** (one-way clip + boomerang).
+
 ## 5. Failure modes → cause → fix
 
 | Symptom | Cause | Fix |
@@ -89,6 +116,8 @@ To stage several actions in one clip, give the `overridePrompt` an explicit seco
 | Rushed, jump-cut smear | too-short bucket on a real transformation | `liveDurationSeconds: 8` |
 | `400 INVALID_ARGUMENT` ("use case not supported") on generate | `lastFrame` + 4s/6s duration on Veo 3.1 Lite | Set `liveDurationSeconds: 8` — the only bucket the provider accepts with an end frame (seeds auto-refund on the failure) |
 | Clip ignores the end frame entirely (free-runs) | Provider support, not prompting | Re-check `endFrameUri` was set on the slide; if confirmed, flag it — this is a provider issue |
+| Requested secondary motion didn't happen (flowers didn't bloom, hand didn't wave) | It competed with a dominant morph and was silently dropped — additive/organic motion loses to a material transformation | Make it the ONLY motion, or give it its own slide/clip; never stack "bloom/grow/gesture" on top of a "X becomes Y" morph |
+| Loop peak looks rushed / weak / half-formed | there-and-back midpoint is unanchored (`endFrameUri` pins only the last frame) and gets ~2s on screen | Ping-pong a one-way clip with a real anchored end frame (§4 → Seamless loops), or lengthen the out/back beats to give the peak more time |
 
 ## 6. Duration, cost, cache
 
