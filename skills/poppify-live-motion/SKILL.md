@@ -41,13 +41,23 @@ The full recipe, in order:
 
 ### The journey overridePrompt template
 
-Describe the JOURNEY between the frames — the frames already carry the endpoints. ≤100 words, locked camera, no camera moves, no slow-motion:
+Describe the JOURNEY between the frames — the frames already carry the endpoints. ≤100 words, locked camera, real-time motion. **Phrase everything as what you want to SEE — never write "no ___" in the positive prompt** (Veo renders the named noun; a "no double image" clause is exactly what produces a ghost). Route exclusions to the `negativePrompt` field instead — see the callout after the example.
 
 > "Locked camera on *\<shot type\>* of *\<subject\>*, *\<transformation verb\>*: *\<how the change physically happens, step by step\>*, one continuous motion ending in the final-frame pose. One single continuous take: every element moves smoothly from its first-frame position to its last-frame position. Single subject throughout, consistent identity, clean clear air."
 
 **Worked example** (a gown color transformation while descending stairs):
 
-> "Locked camera on wide shot of a young woman on a grand staircase, descending two steps toward the camera as a wave of color sweeps down her gown from bodice to hem, the white silk turning deep emerald green like ink spreading through fabric. One single continuous take: every element moves smoothly from its first-frame position to its last-frame position. Single subject throughout, consistent identity, clean clear air, no smoke."
+> "Locked camera on wide shot of a young woman on a grand staircase, descending two steps toward the camera as a wave of color sweeps down her gown from bodice to hem, the white silk turning deep emerald green like ink spreading through fabric. One single continuous take: every element moves smoothly from its first-frame position to its last-frame position. Single subject throughout, consistent identity, clean clear air."
+
+### Negative prompts — the right home for exclusions
+
+Veo (like most video diffusion models) does **not** parse negation. Writing "no smoke", "no double image", "no cross-fade" in the prompt tends to *summon* the named thing — that's what produced a ghost duplicate on a real render. So:
+
+- **Positive prompt → only what you want to SEE.** Turn every exclusion into a positive target: "single solid figure" (not "no double image"), "crisp clean edges" (not "no cross-fade"), "clear empty air" (not "no smoke"), "real-time motion" (not "no slow-motion").
+- **`overrideNegativePrompt` field → the actual exclusions** (pairs with `overridePrompt`). A solid default for transformations / morphs:
+  > `smoke, fog, cross-fade, dissolve, double image, ghost, duplicate person, second person, extra limbs, blur, slow motion, warped face, melting`
+
+(The auto-builder already emits a positive-list negativePrompt; this only matters when you author an `overridePrompt`.)
 
 ## 4. Transformation choreography rules
 
@@ -55,6 +65,18 @@ Describe the JOURNEY between the frames — the frames already carry the endpoin
 - **One transformation per clip.** Locomotion + wardrobe + lighting in one 6s clip = mush. Big appearance delta ⇒ small pose/position delta (or split across two slides).
 - **Geometric consistency.** If the action moves the subject, the end frame must show the spatial consequence (closer/larger, turned, relocated). An end frame that contradicts the action's geometry forces Veo to reconcile the impossible.
 - A deliberate camera journey between two viewpoints (e.g. a 180° arc) is possible — describe exactly one camera path in the overridePrompt and make the end frame the destination viewpoint. Never combine a camera journey with a subject transformation.
+- **Style-change morphs (cartoon→real): weigh end-frame vs free-run.** A composition-locked end frame *constrains* realism — it can land half-real/hybrid (real subject, but still-flat props). Free-run plain i2v (no end frame) renders more naturally but risks ghosting and may stop at "colored," not full photoreal. For a clean photoreal landing, invest in a *fully*-real, composition-locked end frame; for a looser "comes alive" look, free-run and phrase the style flip as a mechanism ("color bleeds in from the face and spreads").
+
+### Timed beat-by-beat choreography (staging multi-step actions)
+
+To stage several actions in one clip, give the `overridePrompt` an explicit second-range timeline. Veo follows the ORDER and rough pacing — it does **not** hit exact seconds (for frame-accurate timing use a keyframe tool like After Effects / Rive):
+
+> Locked static camera, one continuous 8-second take. **0–2s:** \<hold / establishing state\>. **2–4s:** \<first action\>. **4–6s:** \<second action / the transformation, described as a mechanism\>. **6–8s:** \<final action\>. One smooth continuous motion, single subject, consistent identity.
+
+**Sequence, don't stack.** Put the actions in series across the beats (drink → morph → walk), never simultaneously — stacking a big appearance change *and* locomotion in the same instant is the mush combo above.
+
+**Worked example** (a line-art doodle coming to life):
+> Locked static camera, plain white background, one continuous 8-second take. 0–2s: she holds still as a flat line drawing. 2–4s: still a drawing, she drinks the coffee. 4–6s: real color bleeds in from her face and spreads outward, the drawing becoming a single real photographed woman. 6–8s: fully real, she turns and walks out of frame.
 
 ## 5. Failure modes → cause → fix
 
