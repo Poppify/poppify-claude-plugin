@@ -125,4 +125,16 @@ ffmpeg -i clip.mp4 -filter_complex "[0:v]reverse[r];[0:v][r]concat=n=2:v=1[v]" -
 - **10 seeds/clip** (~$0.60 at the standard-pack rate); failures auto-refund. Cache hits via `search_live_library` are free.
 - Bridged renders cache separately from plain animations of the same start image, and **override prompts get their own cache slot** — iterating on the overridePrompt never collides with earlier renders. `forceRender: true` for a deliberate re-roll.
 
+## 7. Audio — the clip has it, the reel doesn't
+
+Per the Gemini API docs, **Veo 3.1 generates native audio on every clip; it is always on and cannot be disabled.** `generateAudio` is not a parameter — passing it (even `false`) errors, which is why `get_capabilities` reports `supportsAudio: false` for the veo provider: the flag describes what a *caller gets end to end*, not what the model does.
+
+The clips genuinely come back with an AAC track. Poppify's composer then discards it — `ffmpegNative.ts` passes an unconditional `-an` on the per-slide render, and `FFmpegLiveSlideRenderer` keeps a track only when `musicPath` is set (and that's the music, not the clip's own audio).
+
+Consequences for how you plan a reel:
+
+- **A live slide is silent today.** That's a composer choice, not a model limit — don't tell the user Veo "can't do audio".
+- **Speech is a voiceover job, not a Live Motion job.** Veo produces plausible ambient sound and speech-*like* delivery, not a specific script delivered word-for-word with reliable lip sync. For a scripted line use `add_narration`; for a talking-head performance, Poppify is the wrong tool (see `get_capabilities.not_for`).
+- Cost is charged at the audio rate regardless (`$0.05/s`), because the model always generates it.
+
 For the wider reel flow (baseline first, upsell rules, layered camera), see `poppify-build-reel`. For verifying the finished clip/reel, see `poppify-render-debug`.

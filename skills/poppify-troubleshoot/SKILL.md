@@ -9,6 +9,12 @@ Find the symptom that matches, then take the suggested action. Most root causes 
 
 ## Symptom → Root cause → Action
 
+### "The live-motion slide has no sound" / "Veo made audio, where did it go?"
+
+**Root cause**: expected, and not a fault. Veo 3.1 generates native audio on every clip (always on — `generateAudio` isn't a parameter), but the composer strips it: `ffmpegNative.ts` passes an unconditional `-an` per slide, and `FFmpegLiveSlideRenderer` only keeps a track when `musicPath` is set.
+
+**Action**: none available in-product — the clip's own audio can't currently reach the finished reel. For a spoken line use `add_narration` (ElevenLabs voiceover); for music use `apply_session_patch({audio})`. Do **not** tell the user Veo is incapable of audio — it isn't, and `get_capabilities` reporting `supportsAudio: false` describes the end-to-end result, not the model.
+
 ### "No audio in the finished video"
 
 **Most likely**: library audio asset was attached but `resolvedUrl` ended up empty (renderer can only download URLs, not asset IDs).
