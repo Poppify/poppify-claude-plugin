@@ -9,11 +9,21 @@ Find the symptom that matches, then take the suggested action. Most root causes 
 
 ## Symptom → Root cause → Action
 
-### "The live-motion slide has no sound" / "Veo made audio, where did it go?"
+### "The live-motion slide has no sound"
 
-**Root cause**: expected, and not a fault. Veo 3.1 generates native audio on every clip (always on — `generateAudio` isn't a parameter), but the composer strips it: `ffmpegNative.ts` passes an unconditional `-an` per slide, and `FFmpegLiveSlideRenderer` only keeps a track when `musicPath` is set.
+**Most likely**: the clip genuinely has no audio stream. Veo 3.1 always generates audio, but **Seedance and Kling are video-only** — check which provider rendered it (`set_model` / `get_capabilities.live_motion.availableModels`). A video-only provider falls back to the ElevenLabs path, so that slide is silent unless you attach narration.
 
-**Action**: none available in-product — the clip's own audio can't currently reach the finished reel. For a spoken line use `add_narration` (ElevenLabs voiceover); for music use `apply_session_patch({audio})`. Do **not** tell the user Veo is incapable of audio — it isn't, and `get_capabilities` reporting `supportsAudio: false` describes the end-to-end result, not the model.
+**Also check**: in a same-image run, several slides share one clip at different offsets and the audio is taken **once**, from the slide that starts the run. Later slides in that run are silent by design.
+
+**Not the cause any more**: the composer used to strip the track with `-an`. It no longer does — `VideoGenerator` extracts the clip's audio and mixes it through the voiceover path.
+
+### "Two voices are talking over each other on one slide"
+
+**Root cause**: a live clip's audio now REPLACES a generated voiceover on the same slide, so this shouldn't happen — if it does, the voiceover was attached to a *different* slide number than the live clip.
+
+**Action**: `get_slide_plan` and confirm the `voiceoverSlides` index matches the slide carrying `motionMode:"live"`. Never budget `add_narration` for a live slide; its audio is already there.
+
+### "No audio in the finished video"
 
 ### "No audio in the finished video"
 

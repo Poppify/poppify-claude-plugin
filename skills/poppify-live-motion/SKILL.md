@@ -125,16 +125,18 @@ ffmpeg -i clip.mp4 -filter_complex "[0:v]reverse[r];[0:v][r]concat=n=2:v=1[v]" -
 - **10 seeds/clip** (~$0.60 at the standard-pack rate); failures auto-refund. Cache hits via `search_live_library` are free.
 - Bridged renders cache separately from plain animations of the same start image, and **override prompts get their own cache slot** — iterating on the overridePrompt never collides with earlier renders. `forceRender: true` for a deliberate re-roll.
 
-## 7. Audio — the clip has it, the reel doesn't
+## 7. Audio — the clip brings its own, and it replaces the voiceover
 
-Per the Gemini API docs, **Veo 3.1 generates native audio on every clip; it is always on and cannot be disabled.** `generateAudio` is not a parameter — passing it (even `false`) errors, which is why `get_capabilities` reports `supportsAudio: false` for the veo provider: the flag describes what a *caller gets end to end*, not what the model does.
+Per the Gemini API docs, **Veo 3.1 generates native audio on every clip; it is always on and cannot be disabled.** `generateAudio` is not a parameter — passing it (even `false`) errors on the Gemini path.
 
-The clips genuinely come back with an AAC track. Poppify's composer then discards it — `ffmpegNative.ts` passes an unconditional `-an` on the per-slide render, and `FFmpegLiveSlideRenderer` keeps a track only when `musicPath` is set (and that's the music, not the clip's own audio).
+That audio now reaches the finished reel. `VideoGenerator` extracts the clip's track and mixes it through the **voiceover path**, so it inherits the normal scheduling and music ducking, and `supportsAudio` reports `true`.
 
-Consequences for how you plan a reel:
+How that changes planning:
 
-- **A live slide is silent today.** That's a composer choice, not a model limit — don't tell the user Veo "can't do audio".
-- **Speech is a voiceover job, not a Live Motion job.** Veo produces plausible ambient sound and speech-*like* delivery, not a specific script delivered word-for-word with reliable lip sync. For a scripted line use `add_narration`; for a talking-head performance, Poppify is the wrong tool (see `get_capabilities.not_for`).
-- Cost is charged at the audio rate regardless (`$0.05/s`), because the model always generates it.
+- **Never buy `add_narration` for a slide that has a live clip.** The clip's audio REPLACES a generated voiceover on that slide, so paying for one is 5 wasted seeds. Slides with no live clip still use ElevenLabs.
+- **An exact script is still a voiceover job.** Veo produces plausible speech and ambient sound, not dictation — it will not deliver a specific line word-for-word with reliable lip sync. Put scripted lines on a non-live slide via `add_narration`; use the live slide for atmosphere, presence and incidental speech.
+- **Only the run owner carries audio.** In a same-image run several slides share one clip at different offsets; the audio is taken once, from the slide that starts it.
+- **A video-only provider degrades cleanly.** Seedance and Kling emit no audio stream, so those slides fall back to the ElevenLabs path untouched.
+- Cost is the audio rate (`$0.05/s`) regardless, because the model always generates it.
 
 For the wider reel flow (baseline first, upsell rules, layered camera), see `poppify-build-reel`. For verifying the finished clip/reel, see `poppify-render-debug`.
