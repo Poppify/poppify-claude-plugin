@@ -6,7 +6,7 @@
 #
 # Wallet setup happens inside the MCP itself: the agent calls `register()`
 # on first contact to mint an apiKey (write to ~/.poppify/key per the
-# server instructions). 50 free seeds are granted on signup. No config
+# server instructions). 50 free seeds are granted on signup, up to 150 after connecting a social account. No config
 # is required in Smithery — credential management is handled per-session
 # by the MCP server's own tool surface.
 #

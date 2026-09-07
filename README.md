@@ -1,14 +1,22 @@
-# Poppify — Photo to TikTok & Instagram Reels (MCP Server + Claude Code Plugin)
+# Poppify — AI Reels Maker & Video Generator (MCP Server + Claude Code Plugin)
 
-> **MCP server and Claude Code plugin for photo to TikTok, Instagram Reels, YouTube Shorts, and Facebook video.** Upload 1–10 photos, get a captioned vertical reel (typically 10–45s, text-length-driven pacing) with motion, library-matched music, and optional voiceover. **$0.06 base render. 50 free seeds on signup. No subscription.**
+> **Make reels worth sharing, from inside Claude.** The AI video generator and reels maker for Instagram, TikTok, YouTube Shorts and Facebook. Give it 1–10 photos or just a topic and get back a captioned 9:16 reel — **Live Motion** that animates the subject inside a still, AI-generated scenes you don't already have, cinematic camera moves, AI voiceover and music, assembled into one edit and published to your channels. **$0.06 base render. 50 free seeds on signup, up to 150 once you connect a social account. No subscription.**
 
-[Poppify](https://poppify.ai) is a Claude Code plugin (and standalone MCP server) that *composes* reels via a photo-led creative pipeline (FFmpeg motion + library-first asset matching + recipe-driven narrative + on-screen text), not a text-to-video generator. That's why the base render is 1 seed (~$0.06) instead of dollars-per-second like generative video services (Runway, Sora, Kling, Vidu, Veo). Its generation primitives — `add_slide_image` / `add_soundtrack` / `add_narration` — are steps *inside* that reel workflow (5 seeds each): fill a slide, add a track, narrate a slide — never a standalone generation service.
+### What you can make
 
-**Where it fits in a Claude Code marketing stack:** Poppify is the creative slot. Pairs with [Postiz](https://github.com/gitroomhq/postiz-agent) for cross-platform scheduling and [Windsor.ai](https://github.com/windsor-ai/claude-windsor-ai-plugin) for attribution. Drop-in replacement for [Runway](https://github.com/runwayml/skills) when you have photos and want library-matched audio; use [HyperFrames](https://github.com/heygen-com/hyperframes) when you want to code video in HTML.
+- **Live Motion** — image-to-video animates the subject inside a still (breath, blink, a turn of the head) while the camera move layers on top. ~10 seeds; cache hits are free.
+- **Images & shots** — generate the scenes you don't already have, or build the reel around your own photos.
+- **Music & voiceover** — a soundtrack and AI narration, mixed with ducking and start-cue alignment.
+- **The edit** — frames, captions, music and voice assembled into one reel. This is the step that makes a reel rather than a pile of assets.
+- **Share on social** — publish straight to Instagram, TikTok, YouTube Shorts or Facebook. Publishing is free.
 
-**Not for:** text→video generation (Sora, Veo, Kling — use Runway or a generative video MCP), avatar-based video (use HeyGen / Synthesia), 4K horizontal cinema, or sub-4-second clips.
+[Poppify](https://poppify.ai) is an AI video generator built for reels specifically. It **composes** — FFmpeg motion, library-first asset matching, recipe-driven narrative and on-screen text — rather than hallucinating every frame, which is why a finished reel is ~$0.06 instead of dollars-per-second. Text-in works too: start from a topic with no photos at all and it generates the scenes.
 
-**Built for:** SMBs (5–19 employees) and solo service providers who want consistent vertical reels without hiring a content creator. The agency replacement at $30–60/mo instead of $3K+.
+**Where it fits in a Claude Code stack:** pairs with [Postiz](https://github.com/gitroomhq/postiz-agent) for cross-platform scheduling and [Windsor.ai](https://github.com/windsor-ai/claude-windsor-ai-plugin) for attribution. Use [HyperFrames](https://github.com/heygen-com/hyperframes) when you want to code video in HTML.
+
+**Not for:** avatar-based presenter video (use HeyGen / Synthesia), 4K horizontal cinema, or sub-4-second clips.
+
+**Built for:** anyone who posts every day and wants the reel finished rather than started.
 
 ## What's inside
 
@@ -37,7 +45,7 @@ In Claude Code:
 
 That's it. After install:
 
-1. `register()` (optionally `{ label: "claude" }`) mints a wallet and returns an `apiKey` + a `signupBonusUrl` (50 free seeds — claim it before paying).
+1. `register()` (optionally `{ label: "claude" }`) mints a wallet and returns an `apiKey` + a `signupBonusUrl` (50 free seeds, up to 150 after connecting a social account — claim before paying).
 2. Use the `poppify-build-reel` skill (Claude will auto-invoke when you ask it to "make a reel") to drive the rest.
 
 ## What does it cost?
@@ -48,9 +56,9 @@ That's it. After install:
 - **`add_slide_image`** (Gemini): 5 seeds per image
 - **`add_soundtrack`** (ElevenLabs Music): 5 seeds per track
 - **`add_narration`** (ElevenLabs Voice): 5 seeds per batch
-- **`animate_slide`** (Veo 3.1 Lite image-to-video, OPTIONAL): 10 seeds per live clip. Animates the subject *inside* a still (blink, breath, micro-gesture) while the FFmpeg camera motion layers on top. A per-slide upgrade applied **after** you review the cinematic baseline — never by default. Cache hits via `search_live_library` are free.
+- **`animate_slide`** (image-to-video, OPTIONAL): 10 seeds per live clip. Animates the subject *inside* a still (blink, breath, micro-gesture) while the FFmpeg camera motion layers on top. A per-slide upgrade applied **after** you review the cinematic baseline — never by default. Cache hits via `search_live_library` are free.
 
-Seeds are sold at $5.99 for 100 seeds (standard pack) or $0.50 for 5 seeds (mini trial pack). 50 seeds are granted free on signup.
+Seeds are sold at $5.99 for 100 seeds (standard pack) or $0.50 for 5 seeds (mini trial pack). 50 seeds are granted free on signup, and up to 150 once you connect a social account.
 
 ## Generation as a workflow step
 

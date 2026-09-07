@@ -70,7 +70,7 @@ Output a small Markdown table:
 | Duration | ✅ 30.2s, matches per-slide sum (29.8s) |
 | Caption color | ✅ matches request (#FFFFFF) |
 | Caption position | ✅ lower third (phrase_reveal) |
-| All slides have captions | ⚠️ slide 3 has no caption (intentional? check session.slides[3].voiceoverShort) |
+| All slides have captions | ⚠️ slide 3 has no caption (intentional? check get_slide_plan) |
 ```
 
 If everything is green, hand the URL to the user with a note that it expires in ~7 days (save it before then). If anything is red, surface the specific failure and offer to re-render with a corrected patch.
@@ -78,7 +78,7 @@ If everything is green, hand the URL to the user with a note that it expires in 
 ## Common failure patterns
 
 - **Audio stream missing.** Library audio attached without resolution OR the audio was attached with an `assetId` that's no longer in the library. Resolution: call `get_music_library` for a fresh asset list, re-attach via `apply_session_patch({audio:{source:"library", assetId}})`, then `confirm` again.
-- **Duration drift > 1s.** Usually means slides ended up with very short `voiceoverShort` text and no explicit duration, so the text-driven length computed below expectations. Resolution: write longer text (`update_slides set_text`), OR set an explicit per-slide hold via `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s, any slide, overrides text-length). Note: voiceover audio and rendered live-motion clips are media floors that always play in full — they don't drift, so a short live-clip render points at a truncation bug, not text length.
+- **Duration drift > 1s.** Usually means slides ended up with very short `voiceoverShort` text and no explicit duration, so the text-driven length computed below expectations. Resolution: write longer text (`update_slides set_text`), OR set an explicit per-slide hold via `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s, any slide, overrides text-length). Note: voiceover audio and rendered live-motion clips are voiceover is an unconditional floor; a live clip is NOT — an explicit set_duration deliberately trims it, so a short live clip may be an edit rather than a bug, not text length.
 - **Wrong caption color.** If `textColor` was requested but not applied, the MCP `apply_session_patch` schema may be stale. Re-check current build via `poppify-schema-introspect` skill.
 - **Captions baked into the image AND drawn by composer (double text).** Don't render text-heavy slides via `add_slide_image` — the model bakes text into the image AND composer adds drawtext on top. Use HTML/CSS screencap + `upload_asset` instead, and pass `update_slides({action:"set_text",newText:""})` to skip composer text for that slide.
 

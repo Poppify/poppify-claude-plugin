@@ -1,6 +1,6 @@
 ---
 name: poppify-live-motion
-description: Prompting playbook for Poppify Live Motion (Veo image-to-video) — plain subject animation AND first/last-frame transitions. Use when the user wants "live motion", "animate the subject", a "before/after transformation", a "morph", "first and last frame" / "endFrameUri" interpolation, OR when a generated Veo clip looks wrong — "smoke morph", "cross-fade", "ghost double", "two of the same person", "motion goes backwards", "subject changed identity". Covers how to write the action prompt, how to generate composition-locked end frames with add_slide_image (reference params, consistent-frames mode), the journey overridePrompt template for bridged renders, and a failure-modes table.
+description: Prompting playbook for Poppify Live Motion (image-to-video) — plain subject animation AND first/last-frame transitions. Use when the user wants "live motion", "animate the subject", a "before/after transformation", a "morph", "first and last frame" / "endFrameUri" interpolation, OR when a generated Veo clip looks wrong — "smoke morph", "cross-fade", "ghost double", "two of the same person", "motion goes backwards", "subject changed identity". Covers how to write the action prompt, how to generate composition-locked end frames with add_slide_image (reference params, consistent-frames mode), the journey overridePrompt template for bridged renders, and a failure-modes table.
 ---
 
 # Live Motion prompting (Veo 3.1 image-to-video)
@@ -55,6 +55,8 @@ Veo (like most video diffusion models) does **not** parse negation. Writing "no 
 
 - **Positive prompt → only what you want to SEE.** Turn every exclusion into a positive target: "single solid figure" (not "no double image"), "crisp clean edges" (not "no cross-fade"), "clear empty air" (not "no smoke"), "real-time motion" (not "no slow-motion").
 - **`overrideNegativePrompt` field → the actual exclusions** (pairs with `overridePrompt`). A solid default for transformations / morphs:
+
+> **Caveat:** `overrideNegativePrompt` reaches the provider on the Vertex path only. On the Gemini-API path it is dropped, so an exclusion you wrote may never have been sent — do not attribute a ghost-duplicate to your prompt wording before checking which path ran.
   > `smoke, fog, cross-fade, dissolve, double image, ghost, duplicate person, second person, extra limbs, blur, slow motion, warped face, melting`
 
 (The auto-builder already emits a positive-list negativePrompt; this only matters when you author an `overridePrompt`.)
@@ -84,7 +86,7 @@ To stage several actions in one clip, give the `overridePrompt` an explicit seco
 
 **A — There-and-back (in-product, one Veo clip).** Set `endFrameUri` to the slide's **own start image** — the cleanest possible composition lock (it *is* the start frame → zero ghost/drift risk). The subject morphs away and settles back:
 
-1. `set_motion_mode({motionMode:"live", endFrameUri:<the slide's own start image URL>, liveDurationSeconds:8})`.
+1. `update_slides({action:"set_motion_mode", motionMode:"live", endFrameUri:<the slide's own start image URL>, liveDurationSeconds:8})`.
 2. Author a **symmetric** overridePrompt — ONE dominant transformation out, hold, reverse:
    > Locked static camera, one continuous 8-second take. 0–3s: \<subject\> transforms via \<mechanism: sweep / ripple / spread\> into \<peak state\>. 3–5s: fully \<peak state\>, \<one small settling motion\>. 5–8s: the change reverses by the same mechanism, settling back to the exact opening frame. One smooth continuous motion, single subject, consistent identity.
 3. IG / TikTok loop the reel natively — you only need the clip's first and last frame to match.
@@ -137,6 +139,6 @@ How that changes planning:
 - **An exact script is still a voiceover job.** Veo produces plausible speech and ambient sound, not dictation — it will not deliver a specific line word-for-word with reliable lip sync. Put scripted lines on a non-live slide via `add_narration`; use the live slide for atmosphere, presence and incidental speech.
 - **Only the run owner carries audio.** In a same-image run several slides share one clip at different offsets; the audio is taken once, from the slide that starts it.
 - **A video-only provider degrades cleanly.** Seedance and Kling emit no audio stream, so those slides fall back to the ElevenLabs path untouched.
-- Cost is the audio rate (`$0.05/s`) regardless, because the model always generates it.
+- The 10 seeds cover the clip whether or not you use its audio — there is no separate audio charge.
 
 For the wider reel flow (baseline first, upsell rules, layered camera), see `poppify-build-reel`. For verifying the finished clip/reel, see `poppify-render-debug`.

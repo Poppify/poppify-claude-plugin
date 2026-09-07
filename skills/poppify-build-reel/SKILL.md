@@ -1,6 +1,6 @@
 ---
 name: poppify-build-reel
-description: Canonical photo-led / topic-led flow for the Poppify MCP. Use whenever the user wants: a reel, short video, vertical video, Instagram reel, TikTok video, TikTok, YouTube Short, YouTube Shorts, Facebook reel, FB reel, 15-second video, 30-second video, 60-second video, photo slideshow, photo to video, animate photos, photo animation, slideshow video, social media video, content for social, brand video, product reel, ad creative for social, before/after reel, transformation video, story reel, hook video, or any vertical short-form video for IG/TikTok/YT/FB. Covers the free customization loop and the single paid confirm step. Base render = 1 seed (~$0.06). 50 free seeds on signup. Use poppify-troubleshoot if the render comes out wrong; poppify-render-debug to verify the finished MP4.
+description: Canonical photo-led / topic-led flow for the Poppify MCP. Use whenever the user wants: a reel, short video, vertical video, Instagram reel, TikTok video, TikTok, YouTube Short, YouTube Shorts, Facebook reel, FB reel, 15-second video, 30-second video, 60-second video, photo slideshow, photo to video, animate photos, photo animation, slideshow video, social media video, content for social, brand video, product reel, ad creative for social, before/after reel, transformation video, story reel, hook video, or any vertical short-form video for IG/TikTok/YT/FB. Covers the free customization loop and the single paid confirm step. Base render = 1 seed (~$0.06). 50 free seeds on signup, up to 150 after connecting a social account. Use poppify-troubleshoot if the render comes out wrong; poppify-render-debug to verify the finished MP4.
 ---
 
 # Building a Poppify reel — the canonical flow
@@ -19,7 +19,7 @@ If the user hasn't registered yet:
 register()                       // optional: { label: "claude" } for provenance
 ```
 
-Returns `apiKey` and `signupBonusUrl`. **Surface the signupBonusUrl** — opening it and signing in with Google grants 50 free seeds (≈ 50 base renders, or ~3 fully-loaded reels WITH AI image + AI music + AI voiceover at ~16 seeds each). Don't ask the user to pay before they've claimed this.
+Returns `apiKey` and `signupBonusUrl`. **Surface the signupBonusUrl** — opening it and signing in with Google grants 50 free seeds — and connecting a social account earns up to 150 total (≈ 50 base renders, or ~3 fully-loaded reels WITH AI image + AI music + AI voiceover at ~16 seeds each). Don't ask the user to pay before they've claimed this.
 
 Store the `apiKey` — every subsequent call needs it.
 
@@ -42,7 +42,9 @@ Returns: slides[] (each with `voiceoverShort` text), caption, hashtags, callToAc
 
 **Topic-led** (no photos, brand or topic input):
 ```
-start_session_from_topic({ apiKey, topic, audience, goal, platform, aspectRatio })
+start_session_from_topic({ apiKey, topic, audience, goal, aspectRatio })
+// NOTE: no `platform` here — the topic schema does not declare it, so it is
+// silently dropped. Only start_session_from_photos accepts it.
 ```
 
 **Aspect ratio is a SESSION property — set it ONCE here.** It defaults to `9:16`
@@ -85,7 +87,7 @@ apply_session_patch({
   // full; then explicit set_duration (any slide, capped 2–15s) or text-length
   // drive the rest; 4s default. To change runtime: write more/fewer words, use
   // set_duration on any slide, or add/remove slides.
-  // Per-slide motion overrides (takes precedence over session-wide)
+  // Per-slide motion overrides (takes precedence over session-wide — but is IGNORED entirely while `continuousEffect:true`, which drives one curve across the whole run)
   slideEffects: [
     { slideIndex: 3, videoEffect: "focus_pull" }  // end card → minimal motion
   ],
@@ -102,6 +104,7 @@ If you'd rather iterate one knob at a time, the per-action tools all work:
 - `apply_session_patch({visualEdits:[...]})` — insert/splice slides (`set_image` is the way to set a beat's image)
 
 **Search the library FIRST** before generating:
+- `list_assets({ apiKey, limit })` FIRST — the user's own library: every image, text card and Live Motion clip they already paid for. Reusing one is free. `visualType:"live_motion"` narrows to clips; `cursor`/`nextCursor` page through a big library. Spending 5 seeds to regenerate something they already own is the most common avoidable cost in the product.
 - `search_visual_library({ apiKey, keywords, limit })` for images (keywords = string or array: subject + mood + scene) — score ≥ 40 should beat AI gen
 - `get_music_library({ apiKey, mood, genre })` for music
 
@@ -113,6 +116,17 @@ These cost 5 seeds each. Always workshop the prompt for free first:
 suggest_prompt({ apiKey, kind: "image", sessionId, slideIndex })  // FREE — pass sessionId+slideIndex
                                                  //   for the slide's composer plan (or subjectDescription when no session)
 add_slide_image({ apiKey, prompt, visualStyle, sessionId })  // 5 seeds, returns image URL
+
+// PHOTO-LED SESSIONS GATE THIS. If the session has uploaded photos, a
+// reference-free call is refused BEFORE charging, with `reference_required`.
+// Pass one of:
+//   referenceAssetIds: [...]     // up to 4, from list_assets / the session
+//   referenceImageUrls: [...]    // up to 4
+//   referenceSlide: <index>      // reuse a slide's existing image as reference
+//   ignoreSessionPhotos: true    // deliberately generate unrelated to their photos
+// so the generated scene matches the user's own shots instead of drifting.
+// allowTextInImage: true only when you genuinely want baked-in typography —
+// otherwise use add_text_card, which is exact and free.
 //   Pass sessionId so the still inherits the session's aspect ratio (vertical by
 //   default). The render canvas is fixed to the session aspect, so a still that
 //   doesn't match it is cropped — passing sessionId keeps them aligned.
@@ -147,14 +161,14 @@ When `status === "complete"`, you get a `videoUrl` (signed GCS URL, valid ~7 day
 
 ## Step 6 — OPTIONAL: Live Motion (a per-slide upgrade, only AFTER baseline review)
 
-Live Motion animates the **subject inside a still** (blink, breath, micro-gesture, a small action) using Veo 3.1 Lite image-to-video, while the FFmpeg camera motion layers on top. It is an OPTIONAL upgrade, NOT a default — the flow is **render the cinematic baseline → user reviews → optionally upgrade selected slides to live**. Never apply it before the user has seen the cinematic render; you'd risk burning seeds on a reel they might already love.
+Live Motion animates the **subject inside a still** (blink, breath, micro-gesture, a small action) using image-to-video, while the FFmpeg camera motion layers on top. It is an OPTIONAL upgrade, NOT a default — the flow is **render the cinematic baseline → user reviews → optionally upgrade selected slides to live**. Never apply it before the user has seen the cinematic render; you'd risk burning seeds on a reel they might already love.
 
 > **For before/after transformations (`endFrameUri` first/last-frame interpolation), invoke the `poppify-live-motion` skill first** — bridged renders need a composition-locked end frame and an authored journey `overridePrompt`; the auto prompt is wrong for that mode.
 
 When the user wants it (same order as the server instructions' lifecycle):
 1. `suggest_live_action({ sessionId, slideIndex })` (FREE) → pick a motion verb with the user.
 2. `animate_slide({ sessionId, slideIndex, dryRun:true, liveAction })` (FREE) — preview the exact Veo prompt; iterate until it reads right.
-3. `search_live_library({ apiKey, imageHash?, actionKeywords:<finalized action>, durationSeconds, provider:"veo-3.1-lite" })` — cache hits (score ≥ 60) attach for **zero seeds**.
+3. `search_live_library({ apiKey, imageHash?, actionKeywords:<finalized action>, durationSeconds })` — cache hits (score ≥ 60) attach for **zero seeds**.
 4. `update_slides({ action:"set_motion_mode", slideIndex, motionMode:"live", liveAction:"<verb>", liveDurationSeconds:<4|6|8> })`.
 5. `animate_slide({ sessionId, slideIndex })` — **10 seeds** per clip (capped 8s), or free on a cache hit. ~30–90s wall-clock.
 6. `confirm` again to re-render with the live slide.
@@ -173,9 +187,18 @@ Flow after `get_result` returns `complete`:
 
 ```
 publish_post({ apiKey, postId })                                  // no channelIds → returns availableChannels + recommendedSlots
-publish_post({ apiKey, postId, channelIds })                      // post NOW (queued; worker publishes within minutes)
-publish_post({ apiKey, postId, channelIds, scheduledAt })         // schedule (ISO, future, before the ~7-day video expiry)
+publish_post({ apiKey, postId, channelIds })                      // PREVIEW — returns status:"confirm_required", publishes nothing
+publish_post({ apiKey, postId, channelIds, confirmed:true })      // post NOW (queued; worker publishes within minutes)
+publish_post({ apiKey, postId, channelIds, scheduledAt, confirmed:true })  // schedule (ISO, future, before the ~7-day video expiry)
 ```
+
+**`confirmed:true` is required or nothing is published.** A call without it
+returns `status:"confirm_required"` and a preview of the caption, channels and
+time — that is the design, not an error. Show the user that preview, get a
+real yes, and only then repeat the SAME call with `confirmed:true`. Never send
+both in one breath: a wasted seed can be refunded, a wrong caption in front of
+an audience cannot. If you find yourself calling this repeatedly and getting
+`confirm_required` each time, you are missing the flag — do not report success.
 
 `postId` comes from the `confirm` response (preferred — survives session expiry); `sessionId` also works while the session is alive. **Always show `availableChannels` and let the USER pick** — never auto-select where their content goes. Re-calling reschedules: already-published channels are preserved, deselected unpublished ones are dropped. The user can move or cancel scheduled posts in the Poppify app calendar.
 
@@ -183,10 +206,10 @@ publish_post({ apiKey, postId, channelIds, scheduledAt })         // schedule (I
 
 ## Gotchas worth knowing
 
-- **Don't burn seeds on text-heavy slides.** Gemini Imagen garbles literal text (terminal frames, install commands, stat callouts). For those: HTML/CSS screencap locally → `upload_asset` → `update_slides({action:"set_image", slideIndex, imageUrl:accessUrl})`. ZERO seeds.
-- **Single-image reel → ONE continuous camera move.** When one image carries all slides, keep a SINGLE `videoEffect` and leave `continuousEffect` on (default `true`). The renderer then makes one continuous move across the whole reel via a global frame offset. **Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing** — each slide gets its own independent move and the motion visibly resets at every cut. Only use per-slide `slideEffects` when the slides have *different* images.
+- **Don't burn seeds on text-heavy slides.** Gemini Imagen garbles literal text (terminal frames, install commands, stat callouts). For those call `add_text_card({apiKey, sessionId, slideIndex, text})` — server-side, ZERO seeds, works in every client including shell-less ones. Only when the design needs pixel control (terminal frame, multi-line code) fall back to the local render in the **`poppify-text-card`** skill.
+- **Single-image reel → ONE continuous camera move.** When one image carries all slides, keep a SINGLE `videoEffect` and set `continuousEffect: true` (default `false` — you must set it). The renderer then makes one continuous move across the whole reel via a global frame offset. **Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing** — each slide gets its own independent move and the motion visibly resets at every cut. Only use per-slide `slideEffects` when the slides have *different* images.
 - **Composer draws caption text BY DEFAULT** from `slides[i].voiceoverShort`. Empty string = skipped.
-- **Slide duration: two DRIVERS + two MEDIA FLOORS, no global control.** Media floors always play in full: (1) attached **voiceover** audio, (2) a rendered **live-motion (Veo) clip** — so an 8s morph slide holds all 8s even under a short caption (you do NOT pad the caption). Drivers: (3) **EXPLICIT** `update_slides({action:"set_duration", slideIndex, duration:N})` on ANY slide — overrides text-length, capped 2–15s, never shortens the media floor; (4) **TEXT-LENGTH** `(words/2.6)*1.2` otherwise; 4s default for a blank slide. Lengthen a slide: write MORE text OR use set_duration. `apply_session_patch({duration})` is rejected — no session-level control. **Use text** for normal captioned slides; **use set_duration** for text-baked cards or any precise hold.
+- **Slide duration: two DRIVERS + two MEDIA FLOORS, no global control.** Media floors always play in full: (1) attached **voiceover** audio, (2) a rendered **live-motion (Veo) clip** — so an 8s morph slide holds all 8s even under a short caption (you do NOT pad the caption). Drivers: (3) **EXPLICIT** `update_slides({action:"set_duration", slideIndex, duration:N})` on ANY slide — overrides text-length, capped 2–15s, never shortens the media floor; (4) **TEXT-LENGTH** `(words/2.6)*1.2` otherwise; 4s default for a blank slide. Lengthen a slide: write MORE text OR use set_duration. `apply_session_patch({duration})` is silently STRIPPED (not in the schema, so no error comes back) — no session-level control. **Use text** for normal captioned slides; **use set_duration** for text-baked cards or any precise hold.
 - **Voiceover auto-detaches when text changes.** The text you write IS the voiceover script. `update_slides({action:"set_text"})` on a slide with attached voiceover detaches it (old audio of wrong words). Call `add_narration` ONLY after text is finalized — otherwise you waste 5 seeds per text edit.
 - **Text cards (terminal screencaps, end cards)**: `set_image` an image with text already baked in, then `update_slides({action:"set_text", slideIndex, newText:""})`. Empty string suppresses composer text overlay. Hold it as long as you want with `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s) — set_duration works on any slide, so you no longer have to blank the caption first just to control the hold. Blank slide with no explicit duration falls back to 4s.
 - **Sceneboard recipes auto-lock motion across all panels** — per-slide variation is ignored when visualType is sceneboard.

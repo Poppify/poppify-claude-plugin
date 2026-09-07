@@ -7,11 +7,11 @@ The user wants to create a Poppify reel. Args provided: $ARGUMENTS
 
 Invoke the `poppify-build-reel` skill and follow its flow:
 
-1. If the user has no `apiKey` yet, call `register()` first (optionally `{ label: "claude" }` — there is no `source` param). Surface the `signupBonusUrl` so they can claim 50 free seeds before paying.
+1. If the user has no `apiKey` yet, call `register()` first (optionally `{ label: "claude" }` — there is no `source` param). Surface the `signupBonusUrl` so they can claim 50 free seeds (up to 150 after connecting a social account) before paying.
 
 2. Pick the entry based on what the user provided:
    - Photos (data URLs or http URLs) → `start_session_from_photos({ apiKey, photos, goal, audience?, platform? })`
-   - Topic / brand intent (no photos) → `start_session_from_topic({ apiKey, topic, audience, goal, platform })` then `refine_concept` to pick from the 5 returned concepts. **Topic-led sessions start with NO images** — every slide's `imageUrl` is empty. You must give at least one slide an image (search the library or `add_slide_image`, then `update_slides({action:"set_image", slideIndex, imageUrl})`) before `confirm`, or it refunds with `topic_led_no_images`. One image can serve every beat — `set_image` the same URL on each slide; captions + motion carry the variety.
+   - Topic / brand intent (no photos) → `start_session_from_topic({ apiKey, topic, audience, goal })` (no `platform` — not in the topic schema, silently dropped) then `refine_concept` to pick from the 5 returned concepts. **Topic-led sessions start with NO images** — every slide's `imageUrl` is empty. You must give at least one slide an image (search the library or `add_slide_image`, then `update_slides({action:"set_image", slideIndex, imageUrl})`) before `confirm`, or it refunds with `topic_led_no_images`. One image can serve every beat — `set_image` the same URL on each slide; captions + motion carry the variety.
 
 3. Review the returned slides + caption + hashtags + CTA with the user. Default to ONE bulk call to apply any edits:
    ```
@@ -30,9 +30,9 @@ Invoke the `poppify-build-reel` skill and follow its flow:
 
 5. When ready: call `get_result` to confirm seed cost — pre-confirm it returns the exact price breakdown — then `confirm({ sessionId, apiKey })`. Poll `get_result` every 20–30 seconds. When complete, hand the `videoUrl` to the user with the note that it's valid ~7 days.
 
-6. **Single-image reels**: when one image carries the whole reel, keep ONE `videoEffect` and leave `continuousEffect` on (default) so the camera makes one continuous move across the slides. Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing and produces a visible reset at each cut.
+6. **Single-image reels**: when one image carries the whole reel, keep ONE `videoEffect` and set `continuousEffect: true` (default) so the camera makes one continuous move across the slides. Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing and produces a visible reset at each cut.
 
-7. **Optional Live Motion upgrade** (only AFTER the user has seen the cinematic baseline): to animate the subject inside a slide, `search_live_library` first (cache hits free), else `update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction})` + `animate_slide` (10 seeds/clip, Veo 3.1 Lite). Recommend at most one live slide, usually the hook. Never apply it before the baseline render. For before/after transformations (`endFrameUri`), invoke the `poppify-live-motion` skill first — bridged renders need a composition-locked end frame and an authored journey `overridePrompt`.
+7. **Optional Live Motion upgrade** (only AFTER the user has seen the cinematic baseline): to animate the subject inside a slide, `search_live_library` first (cache hits free), else `update_slides({action:"set_motion_mode", slideIndex, motionMode:"live", liveAction})` + `animate_slide` (10 seeds/clip). Recommend at most one live slide, usually the hook. Never apply it before the baseline render. For before/after transformations (`endFrameUri`), invoke the `poppify-live-motion` skill first — bridged renders need a composition-locked end frame and an authored journey `overridePrompt`.
 
 8. **Reel length is per-slide — no global knob.** Two DRIVERS: text length, or an explicit `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s, works on ANY slide, overrides the text-length formula). Two MEDIA FLOORS that always play in full: attached voiceover audio and a rendered live-motion (Veo) clip — so an **8s morph slide holds all 8s**; never pad a caption to keep a clip on screen. Lengthen a slide by writing more text OR set_duration.
 

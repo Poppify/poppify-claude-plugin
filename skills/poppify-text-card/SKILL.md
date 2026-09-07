@@ -1,17 +1,34 @@
 ---
 name: poppify-text-card
-description: Render a pixel-perfect text card (terminal frame, install command, code snippet, stat callout, title/end card, any exact literal string) as an image for a Poppify slide — locally via HTML/CSS + a headless browser, cross-platform (macOS/Linux/Windows). Use when a slide's content is the user's LITERAL words and must be crisp, because Gemini Imagen garbles typography. Requires a shell (Claude Code); shell-less clients (Claude Desktop/web) should instead let the composer draw the caption. Zero seeds.
+description: Render a pixel-perfect text card (terminal frame, install command, code snippet, stat callout, title/end card, any exact literal string) as an image for a Poppify slide — locally via HTML/CSS + a headless browser, cross-platform (macOS/Linux/Windows). Use when a slide's content is the user's LITERAL words and must be crisp, because Gemini Imagen garbles typography. Try the free server-side add_text_card tool first — it needs no shell and works in every client. This local HTML/CSS + headless-browser path is for designs add_text_card cannot express (terminal frames, multi-line code). Zero seeds either way.
 ---
 
 # Poppify text card (local render — a Claude Code capability)
 
 Text-primary slides — install commands, code, terminal frames, stat callouts, exact headlines/URLs/brand names — must **never** go through `add_slide_image` (diffusion garbles literal text). On a shell-capable client you render them as a pixel-perfect HTML/CSS card and screenshot it. Zero seeds, ~30s per card.
 
-## Capability gate — check FIRST
+## Try `add_text_card` FIRST — it is free and needs no shell
 
-This skill needs a **shell** plus a **headless browser** (Chrome / Chromium / Edge) or Playwright. This is a Claude Code capability.
+`add_text_card({apiKey, sessionId, slideIndex, text, ...})` renders a text card
+**server-side**, costs zero seeds, and works in EVERY client — Claude Desktop,
+claude.ai, Cursor, anywhere. It is the right answer for the overwhelming
+majority of text-primary slides, and `add_slide_image`'s own description says
+so: "For a slide whose content IS the literal string … use add_text_card
+instead: exact and free."
 
-- **No Bash/shell tool (Claude Desktop, web)?** STOP — don't use this skill. Instead: put the text in `update_slides({action:"set_text", slideIndex, newText})` and let the **composer** draw it as a caption (crisp `drawtext`, not diffusion — it does not garble text). Only reach for a rendered card when the typography is genuinely special (multi-line code, exact terminal frame); if so, ask the user to supply the card image and ingest it with `upload_asset({..., sourceUrl})` / `upload_asset({..., dataBase64})`.
+Reach for the local render below ONLY when `add_text_card` cannot express the
+design — a genuine terminal frame, multi-line syntax-highlighted code, or a
+layout you need pixel control over. That is a narrow case, not the default.
+
+## Capability gate for the local path
+
+The local render needs a **shell** plus a **headless browser** (Chrome /
+Chromium / Edge) or Playwright. This is a Claude Code capability.
+
+- **No Bash/shell tool (Claude Desktop, web)?** Use `add_text_card` — see
+  above; it has no shell requirement. Failing that, put the text in
+  `update_slides({action:"set_text", slideIndex, newText})` and let the
+  **composer** draw it as a caption (crisp `drawtext`, not diffusion).
 - **Shell present but no browser?** Try `npx playwright screenshot` (downloads Chromium on first run), else fall back to the composer caption above.
 
 ## Step 1 — write the styled HTML (target 1080×1920 for 9:16)
@@ -73,8 +90,13 @@ ls -l /tmp/poppify-card/slide.png   # sanity: should be a few hundred KB
 Upload the PNG and set it as the slide image. On a shell client, the presigned-PUT path is simplest:
 
 ```bash
-# upload_asset({apiKey, kind:"photo", contentType:"image/png"}) → {uploadUrl, accessUrl}
-curl -X PUT -H "Content-Type: image/png" --data-binary @/tmp/poppify-card/slide.png "<uploadUrl>"
+# upload_asset({apiKey, kind:"photo", contentType:"image/png"}) → {uploadUrl, accessUrl,
+#                                                                  uploadHeaders, curlExample}
+# USE THE RETURNED curlExample VERBATIM. The presigned PUT binds extra headers
+# (x-goog-custom-time, and x-goog-meta-filename when you pass a filename) into
+# the v4 signature — a hand-written curl with only Content-Type is rejected by
+# GCS with 400 MalformedSecurityHeader. Every header in `uploadHeaders` must be
+# sent, exactly as given.
 # then:
 # update_slides({action:"set_image", slideIndex, imageUrl:<accessUrl>})
 # and suppress the composer's own caption on this slide (the text is already in the image):

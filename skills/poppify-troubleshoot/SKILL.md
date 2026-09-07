@@ -25,11 +25,9 @@ Find the symptom that matches, then take the suggested action. Most root causes 
 
 ### "No audio in the finished video"
 
-### "No audio in the finished video"
-
 **Most likely**: library audio asset was attached but `resolvedUrl` ended up empty (renderer can only download URLs, not asset IDs).
 
-**Action**: call `get_result` and check `session.selectedAudio.resolvedUrl`. If null/empty:
+**Action**: `get_result` does NOT return a session object — it returns `status, videoUrl, signedVideoUrl, price, voiceover, slideCount, errorMessage`. For audio state call `get_slide_plan({sessionId})` and check the resolved soundtrack. If null/empty:
 ```
 get_music_library({ apiKey })                      // get fresh assetIds
 apply_session_patch({ sessionId, audio: { source: "library", assetId: <new id> } })
@@ -42,15 +40,15 @@ If `resolvedUrl` is populated but audio still missing in the MP4: open `poppify-
 
 **Most likely**: `textColor` parameter was dropped because the deployed `apply_session_patch` schema doesn't expose it (schema/code drift bug).
 
-**Action**: invoke the `poppify-schema-introspect` skill to verify. If `textColor` is in the schema but the render still ignored it, check the session via `get_result` — the field should appear on `session.textColor`. If missing on the session, your `apply_session_patch` call dropped it client-side; re-call with the correct field name and re-`confirm`.
+**Action**: invoke the `poppify-schema-introspect` skill to verify. If `textColor` is in the schema but the render still ignored it, check the session via `get_slide_plan` (NOT `get_result`, which returns no session object). If the field is missing there, your `apply_session_patch` call dropped it client-side; re-call with the correct field name and re-`confirm`.
 
 ### "Captions don't appear on some slides"
 
 **Two possibilities**:
 
-1. **Intentional** — `update_slides({action:"set_text", slideIndex, newText:""})` was called on those slides (empty string = composer skips drawtext). Check `session.slides[i].voiceoverShort` — if empty, this is the user's earlier patch landing.
+1. **Intentional** — `update_slides({action:"set_text", slideIndex, newText:""})` was called on those slides (empty string = composer skips drawtext). Check the slide's text via `get_slide_plan({sessionId})` — if empty, this is the user's earlier patch landing.
 
-2. **Photo-led copywriter trip** — `start_session_from_photos` ran but the inline copywriter failed silently and slides[] is empty. Falls back to concept hook + emotionalBeats (single-word labels). **Action**: call `refine_concept({ sessionId, overrides: {...} })` to retry, then re-render.
+2. **Photo-led copywriter trip** — `start_session_from_photos` ran but the inline copywriter failed silently and slides[] is empty. Falls back to concept hook + emotionalBeats (single-word labels). **Action**: call `refine_concept({ sessionId, conceptIndex, overrides: {...} })` to retry, then re-render.
 
 ### "Caption position is wrong"
 
@@ -70,7 +68,7 @@ Don't override `textPosition` unless you know why. The default position comes fr
 get_result({ sessionId, apiKey })
 ```
 
-If `status === "failed"`: the render error is in `session.renderError`. Confirm seeds were refunded (`wallet({action:"balance"})` should show the seeds back) — Poppify refunds on render-error automatically. If the balance is not refunded, file via `submit_feedback`.
+If `status === "failed"`: the render error is in `errorMessage` (get_result returns no session object). Confirm seeds were refunded (`wallet({action:"balance"})` should show the seeds back) — Poppify refunds on render-error automatically. If the balance is not refunded, file via `submit_feedback`.
 
 If `status === "rendering"` for > 5 minutes: the render is genuinely stuck (rare). File via `submit_feedback({ apiKey, sessionId, frictionPoints: ["render stuck in status=rendering for >5 minutes"] })`.
 
@@ -115,13 +113,13 @@ If still nothing > score 40: fall through to `add_slide_image` (5 seeds). Worksh
 
 **Most likely**: different `videoEffect` values were set per slide on a same-image run, which disables continuous-curve smoothing. Each slide then gets its own independent camera move, so the motion visibly resets at every cut instead of flowing as one continuous shot.
 
-**Action**: for a reel where one image carries all slides, use ONE session-wide `videoEffect` (e.g. `push_in`) and leave `continuousEffect` on (default `true`) — the renderer then makes a single continuous camera move across the whole reel via a global frame offset. Variety comes from the changing captions, not from per-slide motion. Only assign per-slide effects when slides have *different* images.
+**Action**: for a reel where one image carries all slides, use ONE session-wide `videoEffect` (e.g. `push_in`) and set `continuousEffect: true` (default `false` — you must set it) — the renderer then makes a single continuous camera move across the whole reel via a global frame offset. Variety comes from the changing captions, not from per-slide motion. Only assign per-slide effects when slides have *different* images.
 
 ### "confirm() says 'needs at least one image attached' but I set images"
 
 **Most likely**: images were placed per-slide via `set_image` but you're on an older deployment whose confirm gate only checked the legacy pool. On current builds, `confirm()` accepts any session where a slide carries its own `imageUrl`.
 
-**Action**: confirm at least one `session.slides[i].imageUrl` is populated (via `get_slide_plan`). If it is and confirm still rejects, the deployment is stale — `apply_session_patch({visualEdits:[{action:"insert_before", slideIndex:0, source:"user_url", url}]})` seeds the pool as a fallback, or file `submit_feedback`. Do NOT use a pool `replace` edit on a topic-led session — the pool is empty so it errors; `update_slides({action:"set_image", slideIndex, imageUrl})` is the way to replace a slide's image.
+**Action**: confirm at least one slide has an image populated (via `get_slide_plan`). If it is and confirm still rejects, the deployment is stale — `apply_session_patch({visualEdits:[{action:"insert_before", slideIndex:0, source:"user_url", url}]})` seeds the pool as a fallback, or file `submit_feedback`. Do NOT use a pool `replace` edit on a topic-led session — the pool is empty so it errors; `update_slides({action:"set_image", slideIndex, imageUrl})` is the way to replace a slide's image.
 
 ### "Live motion didn't apply / subject isn't moving"
 

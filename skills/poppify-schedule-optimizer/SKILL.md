@@ -22,7 +22,13 @@ Poppify tracks engagement per `{day-of-week, hour}` bucket from the account's RE
 3. Let the user pick **channels** (never auto-select) and a **time**:
    - User says "best time" → `scheduledAt: "best"` (auto-picks the top upcoming slot; response's `pickedFrom` tells you which basis it used), or pass a specific slot's `nextOccurrence` verbatim.
    - User picks their own time → schedule it, then read `slotAssessment` in the response. If the verdict says historically weak, surface it with the better alternative — advisory, one sentence, never re-schedule without being asked.
-4. "Post now" (omit `scheduledAt`) is always legitimate for time-sensitive content. For evergreen content, gently note when a top slot is < ~48h away: waiting usually beats posting into a dead zone.
+4. **Confirm before it goes out.** Every call above is a PREVIEW until you add
+   `confirmed:true` — without it `publish_post` returns `status:"confirm_required"`
+   and publishes nothing. Show the user the caption, the channels and the time
+   from that response, get a yes, then repeat the identical call with
+   `confirmed:true`. Repeated `confirm_required` responses mean the flag is
+   missing, not that the post failed.
+5. "Post now" (omit `scheduledAt`) is always legitimate for time-sensitive content. For evergreen content, gently note when a top slot is < ~48h away: waiting usually beats posting into a dead zone.
 
 ## Multi-post spacing (campaigns, batches)
 
