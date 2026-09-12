@@ -10,13 +10,21 @@
 - **The edit** — frames, captions, music and voice assembled into one reel. This is the step that makes a reel rather than a pile of assets.
 - **Share on social** — publish straight to Instagram, TikTok, YouTube Shorts or Facebook. Publishing is free.
 
-[Poppify](https://poppify.ai) is an AI video generator built for reels specifically. It **composes** — FFmpeg motion, library-first asset matching, recipe-driven narrative and on-screen text — rather than hallucinating every frame, which is why a finished reel is ~$0.06 instead of dollars-per-second. Text-in works too: start from a topic with no photos at all and it generates the scenes.
+[Poppify](https://poppify.ai) is an AI video generator built for reels specifically. It **composes** — FFmpeg motion, library-first asset matching, recipe-driven narrative and on-screen text — rather than hallucinating every frame, which is why a finished reel is ~$0.06 instead of dollars-per-second — the [full cost breakdown of AI video generation](https://poppify.ai/research/real-cost-ai-video-generation) shows where the difference comes from. Text-in works too: start from a topic with no photos at all and it generates the scenes.
 
 **Where it fits in a Claude Code stack:** pairs with [Postiz](https://github.com/gitroomhq/postiz-agent) for cross-platform scheduling and [Windsor.ai](https://github.com/windsor-ai/claude-windsor-ai-plugin) for attribution. Use [HyperFrames](https://github.com/heygen-com/hyperframes) when you want to code video in HTML.
 
 **Not for:** avatar-based presenter video (use HeyGen / Synthesia), 4K horizontal cinema, or sub-4-second clips.
 
 **Built for:** anyone who posts every day and wants the reel finished rather than started.
+
+### Guides
+
+Written for the formats people actually ask for:
+
+- [AI video generator for small business](https://poppify.ai/research/ai-video-generator-small-business) — the three kinds of tool sold under one name, and which one composes reels from photos you already have.
+- [How to make a before-and-after reel from photos](https://poppify.ai/research/before-after-reel-from-photos) — the four-beat structure, the shot list to take on the job, and where the reveal belongs.
+- [Instagram reel ideas for food businesses](https://poppify.ai/research/food-business-reel-hooks) — 25 hooks mapped to customer personas, with spokes for [cafés](https://poppify.ai/research/instagram-reel-ideas-cafe), [bakeries](https://poppify.ai/research/instagram-reel-ideas-bakery), [restaurants](https://poppify.ai/research/instagram-reel-ideas-restaurant), [food trucks](https://poppify.ai/research/instagram-reel-ideas-food-truck) and [dessert shops](https://poppify.ai/research/instagram-reel-ideas-dessert).
 
 ## What's inside
 
@@ -95,7 +103,9 @@ Skill content evolves as the MCP surface evolves — we publish new versions whe
 
 - **Bug reports / feature requests**: file via `submit_feedback({ apiKey, ... })` from inside any Claude session — the feedback flows directly to the Poppify team's triage queue.
 - **GitHub Issues**: https://github.com/Poppify/poppify-claude-plugin/issues
-- **Web**: https://poppify.ai
+- **Web**: [poppify.ai](https://poppify.ai) — the AI reels maker and video generator
+- **MCP setup**: [poppify.ai/mcp](https://poppify.ai/mcp) — install in Claude, ChatGPT, Cursor or any MCP client
+- **Research**: [poppify.ai/research](https://poppify.ai/research) — cost analysis, platform benchmarks, reel formats
 
 ## License
 
