@@ -120,8 +120,8 @@ add_slide_image({ apiKey, prompt, visualStyle, sessionId })  // 5 seeds, returns
 // PHOTO-LED SESSIONS GATE THIS. If the session has uploaded photos, a
 // reference-free call is refused BEFORE charging, with `reference_required`.
 // Pass one of:
-//   referenceAssetIds: [...]     // up to 4, from list_assets / the session
-//   referenceImageUrls: [...]    // up to 4
+//   referenceAssetIds: [...]     // up to 8 (compose: 2-3; collage: all of them), from list_assets / the session
+//   referenceImageUrls: [...]    // up to 8
 //   referenceSlide: <index>      // reuse a slide's existing image as reference
 //   ignoreSessionPhotos: true    // deliberately generate unrelated to their photos
 // so the generated scene matches the user's own shots instead of drifting.
