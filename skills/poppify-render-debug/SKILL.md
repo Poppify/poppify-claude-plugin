@@ -55,7 +55,7 @@ Read each frame with the Read tool (it accepts PNG paths) and verify visually:
 
 - **Caption present?** Text should appear on most slides (recipe controls which beats get captions). Empty caption on a slide is a deliberate `set_text({newText:""})` patch — not a bug.
 - **Caption color matches request?** If user asked for `textColor: "#FFFFFF"` and you see another color, the schema-drop bug returned — file via `submit_feedback`.
-- **Caption position matches `textAnimation`?** typewriter → upper third (~33% height), bold_captions → middle, phrase_reveal → lower third (block bottom ~84%).
+- **Caption position matches `textAnimation`?** editorial → bottom serif lockup (small eyebrow over a gold rule, then a large hero line and a smaller support line); lower_third → broadcast plate bottom-left, lines staggering in behind a growing rule; karaoke → centred 2–3 line block with the spoken word in the accent colour. The large line should be the one the deck view showed as `large:Ln/m` (never a URL/domain).
 - **Image content matches slides[i] intent?** If a slide's `voiceoverShort` says "before" but the image is the "after" frame, the visual edits queue may have applied in wrong order.
 
 ## Step 4 — Produce a verdict for the user
@@ -69,7 +69,7 @@ Output a small Markdown table:
 | Audio stream | ✅ aac 44.1kHz, 30.0s |
 | Duration | ✅ 30.2s, matches per-slide sum (29.8s) |
 | Caption color | ✅ matches request (#FFFFFF) |
-| Caption position | ✅ lower third (phrase_reveal) |
+| Caption position | ✅ bottom lockup (editorial) |
 | All slides have captions | ⚠️ slide 3 has no caption (intentional? check get_slide_plan) |
 ```
 

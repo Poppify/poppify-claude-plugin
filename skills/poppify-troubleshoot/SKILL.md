@@ -52,14 +52,14 @@ If `resolvedUrl` is populated but audio still missing in the MP4: open `poppify-
 
 ### "Caption position is wrong"
 
-**Most likely**: the agent set `textAnimation` and `textPosition` to conflicting values (typewriter wants top, you forced bottom). The renderer respects the explicit `textPosition`, but the animation style may render awkwardly at the forced position.
+**Most likely**: the caption STYLE decides the position — there are three, and position is baked into each. An older style name (typewriter / bold_captions / phrase_reveal) is no longer accepted.
 
-**Action**: pick the right animation for the position (renderer anchors):
-- upper-third text (centered ~33% height) → `textAnimation: "typewriter"`
-- middle text (vertically centered) → `textAnimation: "bold_captions"`
-- lower-third text (block bottom ~84%) → `textAnimation: "phrase_reveal"`
+**Action**: pick the style for the look you want:
+- bottom serif lockup, quiet / premium → `textAnimation: "editorial"`
+- broadcast plate bottom-left, ads / explainers → `textAnimation: "lower_third"`
+- centred block, energetic (the TikTok standard) → `textAnimation: "karaoke"`
 
-Don't override `textPosition` unless you know why. The default position comes from the animation style and usually looks best.
+If the wrong LINE came out large (editorial / lower_third), set `heroLine` on that slide in `apply_session_patch({slides:[{index, text, heroLine}]})`; the deck view shows which line renders large (`large:Ln/m`).
 
 ### "Render failed / seeds charged but no video"
 
@@ -100,7 +100,7 @@ If `videoUrl` returned but the URL doesn't open: the URL has expired and Poppify
 **Most likely**: `add_slide_image` was called for a text-heavy concept and Gemini Imagen garbled the literal text into the image, AND composer drew drawtext on top — so the slide has double text.
 
 **Action**:
-- For text-heavy slides (terminal frames, install commands, stat callouts, end cards): render text-on-bg locally via HTML/CSS screencap + `upload_asset`, then attach via `update_slides({action:"set_image", slideIndex, imageUrl:accessUrl})` + `update_slides({action:"set_text", slideIndex, newText:""})` (so composer doesn't add text on top). (`set_image` is the way to attach a slide's image; insert/splice pool edits go through `apply_session_patch({visualEdits:[...]})`.)
+- For text-heavy slides (terminal frames, install commands, stat callouts, end cards): render text-on-bg locally via HTML/CSS screencap + `upload_asset`, uploading with `upload_asset({..., sessionId})` so it is registered in the session with an id, then attach it with `update_slides({action:"set_image", slideIndex, asset:"P7"})` and record `assets({action:"set", asset:"P7", attrs:{caption:"none"}})` so no caption is ever drawn over the baked-in text. The free `add_text_card` does all of this server-side when the slide is just typography.
 - For non-text-heavy slides where AI image is fine: just re-generate with a sharper prompt — workshop it with `suggest_prompt({kind:"image"})` first (free).
 
 ### "Library search returned nothing relevant"
@@ -115,11 +115,13 @@ If still nothing > score 40: fall through to `add_slide_image` (5 seeds). Worksh
 
 **Action**: for a reel where one image carries all slides, use ONE session-wide `videoEffect` (e.g. `push_in`) and set `continuousEffect: true` (default `false` — you must set it) — the renderer then makes a single continuous camera move across the whole reel via a global frame offset. Variety comes from the changing captions, not from per-slide motion. Only assign per-slide effects when slides have *different* images.
 
-### "confirm() says 'needs at least one image attached' but I set images"
+### "confirm() refuses: slides_missing_images / asset_rules_violated / deck_half_written"
 
-**Most likely**: images were placed per-slide via `set_image` but you're on an older deployment whose confirm gate only checked the legacy pool. On current builds, `confirm()` accepts any session where a slide carries its own `imageUrl`.
+These refusals happen BEFORE any seed is charged, and each names the shots involved.
 
-**Action**: confirm at least one slide has an image populated (via `get_slide_plan`). If it is and confirm still rejects, the deployment is stale — `apply_session_patch({visualEdits:[{action:"insert_before", slideIndex:0, source:"user_url", url}]})` seeds the pool as a fallback, or file `submit_feedback`. Do NOT use a pool `replace` edit on a topic-led session — the pool is empty so it errors; `update_slides({action:"set_image", slideIndex, imageUrl})` is the way to replace a slide's image.
+- **`slides_missing_images`** — the named shots have no visual of their own. Remove the extra beats (`update_slides({action:"remove"})`), or place one of their photos / a library image by id (`update_slides({action:"set_image", slideIndex, asset:"P2"})`). Generating is one option, not the first.
+- **`asset_rules_violated`** — the deck breaks something the user already decided (a pinned cover moved, text on a `caption:none` shot, a reference-only or rejected asset placed). The message says which; fix the deck, don't loosen the decision without asking them.
+- **`deck_half_written`** — some shots have a caption and others have nothing decided. For a shot that should stay blank on purpose, `set_text` with `newText:""` (or `assets` `caption:"none"`) records the decision; never put placeholder text on it.
 
 ### "Live motion didn't apply / subject isn't moving"
 

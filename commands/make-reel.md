@@ -17,18 +17,19 @@ Invoke the `poppify-build-reel` skill and follow its flow:
    ```
    apply_session_patch({
      sessionId,
-     slides: [{index: 0, text: "..."}, ...],
+     expectedVersion: N,           // the N in the "DECK vN" line every response ends with
+     slides: [{index: 0, text: "..."}, ...],   // setting text turns that caption ON (captions are opt-in)
      textColor: "#FFFFFF",         // or any hex
-     textAnimation: "phrase_reveal",
+     textAnimation: "editorial",   // editorial | lower_third | karaoke
      videoEffect: "push_in",      // canonical vocabulary: push_in, pull_out, lateral_pan, vertical_pan, focus_pull, epic_parallax, static
      audioMood: "uplifting",
      audio: { source: "library", assetId: "..." }
    })
    ```
 
-4. Use `search_visual_library` and `get_music_library` BEFORE recommending `add_slide_image` / `add_soundtrack` — library matches are free; generation is 5 seeds each. Attach images per-slide via `update_slides({action:"set_image", slideIndex, imageUrl})` (or `apply_session_patch({slides:[{index, imageUrl}]})`) — **not** the legacy pool. To swap music, `apply_session_patch({audio:{source:"library", assetId}})`.
+4. Use `search_visual_library` and `get_music_library` BEFORE recommending `add_slide_image` / `add_soundtrack` — library matches are free; generation is 5 seeds each. Attach images per shot by asset id from the deck view: `update_slides({action:"set_image", slideIndex, asset:"G1"})`, several at once with `update_slides({ops:[...]})` — **not** the legacy pool and not by re-pasting URLs. Move one shot with `update_slides({action:"move", asset:"P4", to:"first"})`. To swap music, `apply_session_patch({audio:{source:"library", assetId}})` — or `assetId:"M2"` for a track already in the session. When the user says what an asset IS ("that's the cover", "only an example", "don't crop it"), record it with `assets({action:"set", asset, attrs:{...}})` so later edits can't undo it.
 
-5. When ready: call `get_result` to confirm seed cost — pre-confirm it returns the exact price breakdown — then `confirm({ sessionId, apiKey })`. Poll `get_result` every 20–30 seconds. When complete, hand the `videoUrl` to the user with the note that it's valid ~7 days.
+5. When the user asks for the render (or says yes to the price you quoted — never in reply to a correction or a complaint): call `get_result` to confirm seed cost — pre-confirm it returns the exact price breakdown — then `confirm({ sessionId, apiKey })`. Poll `get_result` every 20–30 seconds. When complete, hand the `videoUrl` to the user with the note that it's valid ~7 days.
 
 6. **Single-image reels**: when one image carries the whole reel, keep ONE `videoEffect` and set `continuousEffect: true` (default) so the camera makes one continuous move across the slides. Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing and produces a visible reset at each cut.
 

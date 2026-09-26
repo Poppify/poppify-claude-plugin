@@ -98,9 +98,10 @@ Upload the PNG and set it as the slide image. On a shell client, the presigned-P
 # GCS with 400 MalformedSecurityHeader. Every header in `uploadHeaders` must be
 # sent, exactly as given.
 # then:
-# update_slides({action:"set_image", slideIndex, imageUrl:<accessUrl>})
-# and suppress the composer's own caption on this slide (the text is already in the image):
-# update_slides({action:"set_text", slideIndex, newText:""})
+# Pass sessionId to upload_asset so the card is registered in the session with an id (P7 …),
+# then place it by id and record that it carries NO composer caption (the text is in the image):
+# update_slides({action:"set_image", slideIndex, asset:"P7"})
+# assets({action:"set", asset:"P7", attrs:{caption:"none"}})
 ```
 
 (You can also skip the PUT and ingest server-side: `upload_asset({apiKey, kind:"photo", contentType:"image/png", dataBase64:<base64 of the PNG>})` → use the returned `accessUrl`.)
