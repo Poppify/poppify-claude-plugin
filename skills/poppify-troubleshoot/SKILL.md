@@ -105,7 +105,7 @@ If `videoUrl` returned but the URL doesn't open: the URL has expired and Poppify
 
 ### "Library search returned nothing relevant"
 
-**Action**: refine the query. Library scoring weights **Visual Hint Match (tag/keyword)** at 50/100 points — generic queries score low. Use specific keywords from the slide's `voiceoverShort` or concept hook.
+**Action**: refine the query. Library scoring weights **Visual Hint Match (tag/keyword)** at 50/100 points — generic queries score low. Use specific keywords from the slide's `copy` or concept hook.
 
 If still nothing > score 40: fall through to `add_slide_image` (5 seeds). Workshop the prompt with `suggest_prompt({kind:"image"})` for free before generating.
 

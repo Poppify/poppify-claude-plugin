@@ -56,7 +56,7 @@ Read each frame with the Read tool (it accepts PNG paths) and verify visually:
 - **Caption present?** Text should appear on most slides (recipe controls which beats get captions). Empty caption on a slide is a deliberate `set_text({newText:""})` patch — not a bug.
 - **Caption color matches request?** If user asked for `textColor: "#FFFFFF"` and you see another color, the schema-drop bug returned — file via `submit_feedback`.
 - **Caption position matches `textAnimation`?** editorial → bottom serif lockup (small eyebrow over a gold rule, then a large hero line and a smaller support line); lower_third → broadcast plate bottom-left, lines staggering in behind a growing rule; karaoke → centred 2–3 line block with the spoken word in the accent colour. The large line should be the one the deck view showed as `large:Ln/m` (never a URL/domain).
-- **Image content matches slides[i] intent?** If a slide's `voiceoverShort` says "before" but the image is the "after" frame, the visual edits queue may have applied in wrong order.
+- **Image content matches slides[i] intent?** If a slide's `copy` says "before" but the image is the "after" frame, the visual edits queue may have applied in wrong order.
 
 ## Step 4 — Produce a verdict for the user
 
@@ -78,7 +78,7 @@ If everything is green, hand the URL to the user with a note that it expires in 
 ## Common failure patterns
 
 - **Audio stream missing.** Library audio attached without resolution OR the audio was attached with an `assetId` that's no longer in the library. Resolution: call `get_music_library` for a fresh asset list, re-attach via `apply_session_patch({audio:{source:"library", assetId}})`, then `confirm` again.
-- **Duration drift > 1s.** Usually means slides ended up with very short `voiceoverShort` text and no explicit duration, so the text-driven length computed below expectations. Resolution: write longer text (`update_slides set_text`), OR set an explicit per-slide hold via `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s, any slide, overrides text-length). Note: voiceover audio and rendered live-motion clips are voiceover is an unconditional floor; a live clip is NOT — an explicit set_duration deliberately trims it, so a short live clip may be an edit rather than a bug, not text length.
+- **Duration drift > 1s.** Usually means a shot's committed line (`copy`) was rewritten shorter with no explicit duration, so the text-driven length computed below expectations. Resolution: write longer text (`update_slides set_text`), OR set an explicit per-slide hold via `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s, any slide, overrides text-length). Note: voiceover audio and rendered live-motion clips are voiceover is an unconditional floor; a live clip is NOT — an explicit set_duration deliberately trims it, so a short live clip may be an edit rather than a bug, not text length.
 - **Wrong caption color.** If `textColor` was requested but not applied, the MCP `apply_session_patch` schema may be stale. Re-check current build via `poppify-schema-introspect` skill.
 - **Captions baked into the image AND drawn by composer (double text).** Don't render text-heavy slides via `add_slide_image` — the model bakes text into the image AND composer adds drawtext on top. Use HTML/CSS screencap + `upload_asset` instead, and pass `update_slides({action:"set_text",newText:""})` to skip composer text for that slide.
 

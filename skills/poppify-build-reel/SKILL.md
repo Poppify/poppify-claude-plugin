@@ -51,7 +51,9 @@ start_session_from_photos({
 })
 ```
 
-Returns: slides[] (each with `voiceoverShort` text), caption, hashtags, callToAction, picked recipe.
+Returns: slides[] (each with `copy` — the shot's ONE committed line), caption, hashtags, callToAction, picked recipe, and `runtimeNote` (the runtime to quote).
+
+> **One line per shot.** The copywriter writes a short and a full version of every line; the session commits each shot to ONE of them at creation — the full line for few shots, the short one for many, a mix in between, aiming at a 20–30s reel. `slides[].copy` is that line, and it is everything at once: it sets the shot's length whether or not it is drawn, it is the caption when captions go on, and it is what `add_narration` speaks. Present `copy` to the user (never `voiceoverShort`), and quote `runtimeNote` — it is computed from the same line, so it is the length that renders. Rewriting a line with `set_text` changes that shot's length; say the new runtime when you do.
 
 **Topic-led** (no photos, brand or topic input):
 ```
@@ -103,8 +105,9 @@ apply_session_patch({
   audioMood: "uplifting",
   // NOTE: no SESSION-level `duration` knob. Per-slide length is resolved as:
   // media floors (voiceover audio + a rendered live-motion clip) ALWAYS play in
-  // full; then explicit set_duration (any slide, capped 2–15s) or text-length
-  // drive the rest; 4s default. To change runtime: write more/fewer words, use
+  // full; then explicit set_duration (any slide, capped 2–15s) or the length
+  // of the shot's committed line (slides[].copy, drawn or not) drive the rest;
+  // 4s for a deliberately wordless shot. To change runtime: rewrite lines, use
   // set_duration on any slide, or add/remove slides.
   // Per-slide motion overrides (takes precedence over session-wide — but is IGNORED entirely while `continuousEffect:true`, which drives one curve across the whole run)
   slideEffects: [
@@ -186,8 +189,9 @@ add_soundtrack({ apiKey, prompt, durationSeconds }) // 5 seeds, returns URL (def
 // Then attach via apply_session_patch({audio:{source:"user_url", url}})
 
 list_voices({ apiKey })                          // FREE voice catalog
-add_narration({ apiKey, scripts, voiceId }) // 5 seeds per batch
-// Then attach via apply_session_patch({voiceoverSlides})
+add_narration({ apiKey, sessionId, voiceId }) // 5 seeds per batch — speaks each shot's committed line
+// With sessionId, omit `scripts`: narration says what the shot says. Passing different
+// words is refused before any charge (narration_text_mismatch) — set_text the shot first.
 ```
 
 ## Step 5 — Verify, then confirm
@@ -255,9 +259,9 @@ an audience cannot. If you find yourself calling this repeatedly and getting
 
 - **Don't burn seeds on text-heavy slides.** Gemini Imagen garbles literal text (terminal frames, install commands, stat callouts). For those call `add_text_card({apiKey, sessionId, slideIndex, text})` — server-side, ZERO seeds, works in every client including shell-less ones. Only when the design needs pixel control (terminal frame, multi-line code) fall back to the local render in the **`poppify-text-card`** skill.
 - **Single-image reel → ONE continuous camera move.** When one image carries all slides, keep a SINGLE `videoEffect` and set `continuousEffect: true` (default `false` — you must set it). The renderer then makes one continuous move across the whole reel via a global frame offset. **Assigning a DIFFERENT effect per slide on a same-image run disables continuous smoothing** — each slide gets its own independent move and the motion visibly resets at every cut. Only use per-slide `slideEffects` when the slides have *different* images.
-- **On-screen captions are OPT-IN.** The slide text a session starts with is the spoken script; nothing is drawn on the picture until `update_slides({action:"set_text"})` / `apply_session_patch({slides:[{index,text}]})` sets it. A deck with a script and no captions renders wordless — set the text you want shown. Empty string = this shot left blank on purpose (allowed even when every other shot is captioned).
-- **Slide duration: two DRIVERS + two MEDIA FLOORS, no global control.** Media floors always play in full: (1) attached **voiceover** audio, (2) a rendered **live-motion (Veo) clip** — so an 8s morph slide holds all 8s even under a short caption (you do NOT pad the caption). Drivers: (3) **EXPLICIT** `update_slides({action:"set_duration", slideIndex, duration:N})` on ANY slide — overrides text-length, capped 2–15s, never shortens the media floor; (4) **TEXT-LENGTH** `(words/2.6)*1.2` otherwise; 4s default for a blank slide. Lengthen a slide: write MORE text OR use set_duration. `apply_session_patch({duration})` is silently STRIPPED (not in the schema, so no error comes back) — no session-level control. **Use text** for normal captioned slides; **use set_duration** for text-baked cards or any precise hold.
-- **Voiceover auto-detaches when text changes.** The text you write IS the voiceover script. `update_slides({action:"set_text"})` on a slide with attached voiceover detaches it (old audio of wrong words). Call `add_narration` ONLY after text is finalized — otherwise you waste 5 seeds per text edit.
+- **On-screen captions are OPT-IN.** Each shot's committed line (`slides[].copy`) times the shot and is what narration speaks; nothing is drawn on the picture until `update_slides({action:"set_text"})` / `apply_session_patch({slides:[{index,text}]})` sets it. A deck with a script and no captions renders wordless — set the text you want shown. Empty string = this shot left blank on purpose (allowed even when every other shot is captioned).
+- **Slide duration: two DRIVERS + two MEDIA FLOORS, no global control.** Media floors always play in full: (1) attached **voiceover** audio, (2) a rendered **live-motion (Veo) clip** — so an 8s morph slide holds all 8s even under a short caption (you do NOT pad the caption). Drivers: (3) **EXPLICIT** `update_slides({action:"set_duration", slideIndex, duration:N})` on ANY slide — overrides text-length, capped 2–15s, never shortens the media floor; (4) **TEXT-LENGTH** `(words/2.6)*1.2` of the shot's committed line, whether or not it is drawn; 4s for a deliberately wordless shot. Lengthen a slide: write MORE text OR use set_duration. `apply_session_patch({duration})` is silently STRIPPED (not in the schema, so no error comes back) — no session-level control. **Use text** for normal captioned slides; **use set_duration** for text-baked cards or any precise hold.
+- **Voiceover auto-detaches when text changes.** The shot's line IS the voiceover script — add_narration speaks exactly `slides[].copy`. `update_slides({action:"set_text"})` on a slide with attached voiceover detaches it (old audio of wrong words). Call `add_narration` ONLY after text is finalized — otherwise you waste 5 seeds per text edit.
 - **Images with text already baked in (her cover, terminal screencaps, end cards)**: place the image, then record `assets({action:"set", asset, attrs:{caption:"none"}})` (or `role:"cover"`, which implies it) — or at least `set_text` with `newText:""`. Never put placeholder text (a space, a dot, a slogan) on a shot the user said to leave blank. Hold it as long as you want with `update_slides({action:"set_duration", slideIndex, duration:N})` (2–15s) — set_duration works on any slide, so you no longer have to blank the caption first just to control the hold. Blank slide with no explicit duration falls back to 4s.
 - **Sceneboard recipes auto-lock motion across all panels** — per-slide variation is ignored when visualType is sceneboard.
 - **Library audio resolves URLs at attach time** — if `apply_session_patch({audio:{source:"library", assetId}})` errors with "asset not found", pick a different `assetId` from `get_music_library`. Once a track has been in the session it has an `M` id — put it back with `audio:{assetId:"M2"}`.
