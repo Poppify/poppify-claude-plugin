@@ -232,7 +232,7 @@ Rendering and publishing are separate. `confirm` produces the MP4 and files a `r
 
 Preconditions, in order:
 1. **Wallet linked** to the user's Poppify app account: `wallet({action:"link"})` (QR / code). Channels live on the app account.
-2. **Channels connected** — Instagram / TikTok / YouTube / Facebook OAuth happens in the Poppify mobile app only. `portfolio({action:"list"})` shows portfolios + connected channels; multi-brand users switch the active portfolio with `portfolio({action:"switch", portfolioId})`.
+2. **Channels connected** — `channels({action:"list"})`. To add one, `channels({action:"connect", platform})` returns a one-use sign-in link (15 min) to give the user; when they say done, `channels({action:"status", requestId})` → `connected`, or `selection_required` with the accounts to choose from → `channels({action:"select", platform, accounts})`. Removing a channel (`remove`) needs the user's yes (`confirmed:true`). `portfolio({action:"list"})` shows portfolios; multi-brand users switch the active portfolio with `portfolio({action:"switch", portfolioId})`.
 
 Flow after `get_result` returns `complete`:
 

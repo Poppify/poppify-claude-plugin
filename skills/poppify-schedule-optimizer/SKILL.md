@@ -43,7 +43,7 @@ Each historical slot has a `bestPostType` (reel / carousel / static). When sched
 ## Pre-flight gates (same as publish_post)
 
 1. Wallet linked: `wallet({action:"link"})` — channels live on the app account.
-2. Channels connected in the Poppify mobile app (OAuth is app-only). `portfolio({action:"list"})` shows what exists; switch active portfolio with `portfolio({action:"switch"})` for multi-brand users.
+2. Channels connected — `channels({action:"list"})` shows what exists; `channels({action:"connect", platform})` gives the user a sign-in link (then `channels({action:"status", requestId})`, and `select` if the login found several accounts); switch active portfolio with `portfolio({action:"switch"})` for multi-brand users.
 3. `scheduledAt` must be in the future AND before the rendered video URL expires (~7 days post-render) — the response `warnings` array flags expiry conflicts. For far-future scheduling, render closer to the date instead.
 
 ## What NOT to do
